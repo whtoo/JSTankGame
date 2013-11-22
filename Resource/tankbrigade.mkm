@@ -1,0 +1,12 @@
+<MKM version="2.0" imageFileUrl="file:///Users/weibinzeng/Documents/shooter/tankbrigade.png">
+  <Marks>
+    <LengthMark direction="12" color="16711680" length="34" x="65" y="31"/>
+    <LengthMark direction="3" color="16711680" length="34" x="49" y="65"/>
+    <LengthMark direction="3" color="16711680" length="396" x="6" y="32"/>
+    <LengthMark direction="3" color="16711680" length="160" x="42" y="437"/>
+    <RectMark color="16711680" x="52" y="438" offsetX="0" offsetY="0"/>
+    <RectMark color="16711680" x="372" y="438" offsetX="0" offsetY="0"/>
+    <RectMark color="16711680" x="32" y="32" offsetX="0" offsetY="0"/>
+    <RectMark color="16711680" x="65" y="65" offsetX="0" offsetY="0"/>
+  </Marks>
+</MKM>
