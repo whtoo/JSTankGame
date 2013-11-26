@@ -63,12 +63,14 @@ function APWatcher(){
 				break;
 		}
 	};
-	
+	this.keyWatcherUp = function(e){
+		delete window.gameManager.commandList;
+		window.gameManager.commandList = new Array();
+	};
+	body.onkeyup = this.keyWatcherUp;
 	body.onkeypress = this.keyWatcher;
 
 }
-
-
 
 function GameObjManager (){
 	var objList = new Array();
@@ -78,8 +80,10 @@ function GameObjManager (){
 		objList.push(player);
 	}
 	this.gameObjects = objList;
+	this.commandList = new Array();
 	this.isInited = 0;
 }
+
 //动画图册
 function SpriteAnimSheet(startAnim,stopAnim,X){
 	this.animationFrames = new Array();
@@ -143,9 +147,19 @@ function TankPlayer(tankID,initDirection,isUser){
 
 TankPlayer.prototype = new Player();
 TankPlayer.prototype.constructor = TankPlayer;
+TankPlayer.prototype.speed = 2.4;
+TankPlayer.prototype.updateSelfCoor = function(){
+	this.X = this.destX * this.destCook;
+	this.Y = this.destY * this.destCook;
+	this.centerX = this.X + this.destW * 0.5;
+	this.centerY = this.Y + this.destH * 0.5;
+};
+
 TankPlayer.prototype.rotationAP = function(direction){
 	console.log("dr"+direction + "===" + this.direction);
+	var cmd = window.gameManager.commandList;
 	if(direction != this.direction){
+		window.gameManager.commandList.pop();
 		switch(direction){
 			case 'w':
 				console.log('press wT');
@@ -169,13 +183,38 @@ TankPlayer.prototype.rotationAP = function(direction){
 		}
 		this.direction = direction;
 	}
+	else{
+		switch(direction){
+		case 'w':
+			console.log('press wT');
+			cmd.push({"y":-this.speed,"x":0});
+			//this.destY -= this.speed;
+			break;
+		case 's':
+			console.log('press sT');
+			cmd.push({"y":this.speed,"x":0});
+			//this.destY += this.speed;
+			break;
+		case 'a':
+			console.log('press aT');
+			cmd.push({"x":-this.speed,"y":0});
+			//this.destX -= this.speed;
+			break;
+		case 'd':
+			cmd.push({"x":this.speed,"y":0});
+			console.log('press dT');
+			//this.destX +=  this.speed;
+			break;
+		default:
+			console.log('press otherT');
+			break;
+		}
+		per = this.speed / 60;
+		this.direction = direction;
+		this.updateSelfCoor();
+	}
 	
 };
-
-function Animator(){
-	
-	
-}
 
 
 //Render Object Def
@@ -193,12 +232,24 @@ function Render() {
 		that.init();
 	}
 }
+
+window.requestAnimFrame = (function(){
+  return  window.requestAnimationFrame       || 
+          window.webkitRequestAnimationFrame || 
+          window.mozRequestAnimationFrame    || 
+          window.oRequestAnimationFrame      || 
+          window.msRequestAnimationFrame     || 
+          function( callback,  element){
+            window.setTimeout(callback, 1000 / 60);
+          };
+})();
+var per = 0;
 //Render Object prototype Def
 Render.prototype = {
 	constructor:Render,
 	init : function(){
-		setInterval(this.drawScreen,100);
-//		this.drawScreen();
+		
+		window.requestAnimFrame(this.drawScreen);
 //		this.drawScreen();
 	},
 	drawScreen:function(){
@@ -206,21 +257,66 @@ Render.prototype = {
 		this.context.clearRect(0, 0, 800, 500);
 		window.render.drawMap(tileSheet);
 		window.render.drawPlayer(tileSheet);
+		window.requestAnimFrame(Render.prototype.drawScreen.bind(this));
+		
 	},
 	drawPlayer:function(tileSheet){
 		var players = window.gameManager.gameObjects;
 		var item;
 		for(var i = 0;i<players.length;i++){
 			item = players[i];
-			console.log(item);
+			if(window.gameManager.commandList.length > 0){
+				
+				var cmd = window.gameManager.commandList[0];
+				switch(item.direction){
+				case 'w':
+					console.log('press wT');
+					cmd.y += per;
+					item.destY -= per;
+					if(cmd.y > 0){
+						window.gameManager.commandList.pop();
+					}
+					break;
+				case 's':
+					console.log('press sT');
+					cmd.y -= per;
+					item.destY += per;
+					if(cmd.y < 0){
+						window.gameManager.commandList.pop();
+					}
+					break;
+				case 'a':
+					console.log('press aT');
+					cmd.x += per;
+					item.destX -= per;
+					if(cmd.x > 0){
+						window.gameManager.commandList.pop();
+					}
+					break;
+				case 'd':
+					cmd.x -= per;
+					item.destX += per;
+					if(cmd.x < 0){
+						window.gameManager.commandList.pop();
+					}	
+					
+					break;
+				default:
+					
+					console.log('press otherT');
+					break;
+				}
+				item.updateSelfCoor();
+			}
 			var angleInRadians = item.arc / 180 * Math.PI;
 			var animFrame = item.animSheet.getFrames();
 			console.log(animFrame);
+			
 			this.context.save();
+			
 			this.context.translate(item.centerX , item.centerY);
 			this.context.rotate(angleInRadians);
 			this.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy,animFrame.sourceW,animFrame.sourceH, -item.destW / 2 , -item.destH / 2 ,item.destW,item.destH);
-			
 			this.context.restore();
 		};
 	},
