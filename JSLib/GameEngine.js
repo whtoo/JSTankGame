@@ -81,7 +81,7 @@ function GameObjManager() {
         objList.push(player);
     }
     this.gameObjects = objList;
-    this.commandList = [];
+    this.commandList = new Array();
     this.isInited = 0;
 }
 
@@ -158,7 +158,7 @@ TankPlayer.prototype.updateSelfCoor = function () {
 };
 
 TankPlayer.prototype.rotationAP = function (direction) {
-    console.log("dr" + direction + "===" + this.direction);
+//    console.log("dr" + direction + "===" + this.direction);
     var cmd = window.gameManager.commandList;
     if (direction != this.direction) {
         window.gameManager.commandList.pop();
@@ -247,11 +247,19 @@ window.requestAnimFrame = (function () {
 })();
 
 var per = 0;
-
+lastTime = new Date();
 offscreenCanvas = document.createElement('canvas');
 offscreenCanvas.width = 800;
 offscreenCanvas.height = 500;
 offscreenContext = offscreenCanvas.getContext('2d');
+
+function calculateFps() {
+	   var now = (+new Date),
+	       fps = 1000 / (now - lastTime);
+	   lastTime = now;
+	return fps; 
+}
+
 
 function offscreenCache(contextRef){
 	offscreenContext.fillStyle = "#aaaaaa";
@@ -298,7 +306,10 @@ Render.prototype = {
         this.context.clearRect(0, 0, 800, 500);
         
         window.render.drawMap(tileSheet);
+        
         window.render.drawPlayer(tileSheet);
+        context.fillStyle = 'cornflowerblue';
+        context.fillText(calculateFps().toFixed() + ' fps', 20, 60);
         window.requestAnimFrame(Render.prototype.drawScreen.bind(this));
 
     },
@@ -353,10 +364,10 @@ Render.prototype = {
             }
             var angleInRadians = item.arc / 180 * Math.PI;
             var animFrame = item.animSheet.getFrames();
-            console.log(animFrame);
+//            console.log(animFrame);
 
             this.context.save();
-
+            console.log("X:"+item.centerX+"+Y:"+item.centerY)
             this.context.translate(item.centerX, item.centerY);
             this.context.rotate(angleInRadians);
             this.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
