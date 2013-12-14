@@ -105,7 +105,7 @@ SpriteAnimSheet.prototype.getFrames = function () {
         this.orderIndex = 0;
     }
 
-    var index = (parseInt(this.orderIndex) % parseInt(this.animLength));
+//    var index = (parseInt(this.orderIndex) % parseInt(this.animLength));
     return this.animationFrames[0];
 };
 
@@ -149,6 +149,7 @@ function TankPlayer(tankID, initDirection, isUser) {
 TankPlayer.prototype = new Player();
 TankPlayer.prototype.constructor = TankPlayer;
 TankPlayer.prototype.speed = 2.4;
+
 TankPlayer.prototype.updateSelfCoor = function () {
     this.X = this.destX * this.destCook;
     this.Y = this.destY * this.destCook;
@@ -244,7 +245,33 @@ window.requestAnimFrame = (function () {
                 window.setTimeout(callback, 1000 / 60);
             };
 })();
+
 var per = 0;
+
+offscreenCanvas = document.createElement('canvas');
+offscreenCanvas.width = 800;
+offscreenCanvas.height = 500;
+offscreenContext = offscreenCanvas.getContext('2d');
+
+function offscreenCache(contextRef){
+	offscreenContext.fillStyle = "#aaaaaa";
+	offscreenContext.fillRect(0, 0, 23 * 33, 13 * 33);
+    var mapTitle = contextRef.mapTitle;
+    var mapRows = 13;
+    var mapCols = 23;
+
+    var mapIndexOffset = -1;
+   
+
+    for (var rowCtr = 0; rowCtr < mapRows; rowCtr++) {
+        for (var colCtr = 0; colCtr < mapCols; colCtr++) {
+            var tileId = mapTitle[rowCtr][colCtr] + mapIndexOffset;
+            var sourceX = Math.floor(tileId % 24) * 33;//tmx use line-based count
+            var sourceY = Math.floor(tileId / 24) * 33;
+            offscreenContext.drawImage(contextRef.tileSheet, sourceX, sourceY, 32, 32, colCtr * 33, rowCtr * 33, 32, 32);
+        }
+    }
+}
 //Render Object prototype Def
 Render.prototype = {
     constructor: Render,
@@ -262,13 +289,14 @@ Render.prototype = {
                     [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102],
                     [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102]],
     init: function () {
-
+    	offscreenCache(this);
         window.requestAnimFrame(this.drawScreen);
         //		this.drawScreen();
     },
     drawScreen: function () {
         var tileSheet = window.render.tileSheet;
         this.context.clearRect(0, 0, 800, 500);
+        
         window.render.drawMap(tileSheet);
         window.render.drawPlayer(tileSheet);
         window.requestAnimFrame(Render.prototype.drawScreen.bind(this));
@@ -338,23 +366,8 @@ Render.prototype = {
     drawMap: function (tileSheet) {
         //draw a background so we can see the Canvas edges 
 
-        this.context.fillStyle = "#aaaaaa";
-        this.context.fillRect(0, 0, 23 * 33, 13 * 33);
-        var mapTitle = this.mapTitle;
-        var mapRows = 13;
-        var mapCols = 23;
-
-        var mapIndexOffset = -1;
-       
-
-        for (var rowCtr = 0; rowCtr < mapRows; rowCtr++) {
-            for (var colCtr = 0; colCtr < mapCols; colCtr++) {
-                var tileId = mapTitle[rowCtr][colCtr] + mapIndexOffset;
-                var sourceX = Math.floor(tileId % 24) * 33;//tmx use line-based count
-                var sourceY = Math.floor(tileId / 24) * 33;
-                this.context.drawImage(tileSheet, sourceX, sourceY, 32, 32, colCtr * 33, rowCtr * 33, 32, 32);
-            }
-        }
+     this.context.drawImage(offscreenCanvas, 0, 0,
+             offscreenCanvas.width, offscreenCanvas.height);
 
     }
 };
