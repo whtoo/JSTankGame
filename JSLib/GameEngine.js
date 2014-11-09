@@ -33,8 +33,13 @@ function APWatcher() {
     var gm = window.gameManager;
 
     var body = $('body')[0];
+    
     this.keyWatcher = function (e) {
         var player = gm.gameObjects[0];
+        if(gm.commandList.stop){
+            gm.commandList.stop = false;
+        }
+        console.log(player.destY +"==="+player.destX);
         switch (e.which) {
             case 119:
                 console.log('press w');
@@ -61,12 +66,14 @@ function APWatcher() {
                 }
                 break;
             default:
-                console.log('press other');
+                //console.log('press other');
                 break;
         }
     };
     this.keyWatcherUp = function (e) {
-        gm.commandList.length = 0;
+        gm.commandList.stop = true;
+        gm.commandList.nextX =  gm.commandList.nextY = 0;
+        
     };
     body.onkeyup = this.keyWatcherUp;
     body.onkeypress = this.keyWatcher;
@@ -81,7 +88,7 @@ function GameObjManager() {
         objList.push(player);
     }
     this.gameObjects = objList;
-    this.commandList = new Array();
+    this.commandList = {nextX:0,nextY:0,stop:true};
     this.isInited = 0;
 }
 
@@ -161,57 +168,59 @@ TankPlayer.prototype.rotationAP = function (direction) {
 //    console.log("dr" + direction + "===" + this.direction);
     var cmd = window.gameManager.commandList;
     if (direction != this.direction) {
-        window.gameManager.commandList.pop();
+        cmd.nextX = cmd.nextY = 0;
         switch (direction) {
             case 'w':
-                console.log('press wT');
+                //console.log('press wT');
                 this.arc = 270;
                 break;
             case 's':
-                console.log('press sT');
+                //console.log('press sT');
                 this.arc = 90;
                 break;
             case 'a':
-                console.log('press aT');
+                //console.log('press aT');
                 this.arc = 180;
                 break;
             case 'd':
-                console.log('press dT');
+                //console.log('press dT');
                 this.arc = 0;
                 break;
             default:
-                console.log('press otherT');
+                //console.log('press otherT');
                 break;
         }
         this.direction = direction;
     }
     else {
-        switch (direction) {
-            case 'w':
-                console.log('press wT');
-                cmd.push({ "y": -this.speed, "x": 0 });
-                //this.destY -= this.speed;
-                break;
-            case 's':
-                console.log('press sT');
-                cmd.push({ "y": this.speed, "x": 0 });
-                //this.destY += this.speed;
-                break;
-            case 'a':
-                console.log('press aT');
-                cmd.push({ "x": -this.speed, "y": 0 });
-                //this.destX -= this.speed;
-                break;
-            case 'd':
-                cmd.push({ "x": this.speed, "y": 0 });
-                console.log('press dT');
-                //this.destX +=  this.speed;
-                break;
-            default:
-                console.log('press otherT');
-                break;
+        if(cmd.stop === false){
+            per = this.speed / 60;
+            switch (direction) {
+                case 'w':
+                   // console.log('press wT');
+                   cmd.nextY -= per * 2;
+                    //this.destY -= this.speed;
+                    break;
+                case 's':
+                    //console.log('press sT');
+                     cmd.nextY += per * 2;
+                    //this.destY += this.speed;
+                    break;
+                case 'a':
+                   // console.log('press aT');
+                    cmd.nextX -= per * 2;
+                    //this.destX -= this.speed;
+                    break;
+                case 'd':
+                     cmd.nextX += per * 2;
+                    //console.log('press dT');
+                    //this.destX +=  this.speed;
+                    break;
+                default:
+                    //console.log('press otherT');
+                    break;
+            }
         }
-        per = this.speed / 60;
         this.direction = direction;
         this.updateSelfCoor();
     }
@@ -315,64 +324,67 @@ Render.prototype = {
     },
     drawPlayer: function (tileSheet) {
         var cl = window.gameManager.commandList;
-
+        
         var players = window.gameManager.gameObjects;
         var item;
+       
         for (var i = 0; i < players.length; i++) {
-            item = players[i];
-            if (cl.length) {
-                var cmd = cl[0];
+                item = players[i];
+                if(cl.stop === false){
+                var cmd = cl;
+                
                 switch (item.direction) {
                     case 'w':
-                        console.log('press wT');
-                        cmd.y += per;
-                        item.destY -= per;
-                        if (cmd.y > 0) {
-                            cl.pop();
-                        }
+                        //console.log('press wT');
+                       cmd.nextY += per;
+                       item.destY -= per;
                         break;
                     case 's':
-                        console.log('press sT');
-                        cmd.y -= per;
+                       // console.log('press sT');
+                       cmd.nextY -= per;
                         item.destY += per;
-                        if (cmd.y < 0) {
-                            cl.pop();
+                        if (cmd.nextX < per) {
+                            cmd.nextY = 0;
                         }
                         break;
                     case 'a':
-                        console.log('press aT');
-                        cmd.x += per;
-                        item.destX -= per;
-                        if (cmd.x > 0) {
-                            cl.pop();
-                        }
+                       // console.log('press aT');
+                        
+                       cmd.nextX += per;
+                       item.destX -= per;
+                      
+                       
                         break;
                     case 'd':
-                        cmd.x -= per;
+                        cmd.nextX -= per;
                         item.destX += per;
-                        if (cmd.x < 0) {
-                            cl.pop();
+                        if (cmd.nextX < per) {
+                            nextX = 0;
                         }
 
                         break;
                     default:
 
-                        console.log('press otherT');
+                       // console.log('press otherT');
                         break;
+                    }
                 }
+                
+                
                 item.updateSelfCoor();
+           
             }
             var angleInRadians = item.arc / 180 * Math.PI;
             var animFrame = item.animSheet.getFrames();
 //            console.log(animFrame);
 
             this.context.save();
-            console.log("X:"+item.centerX+"+Y:"+item.centerY)
+            //console.log("X:"+item.centerX+"+Y:"+item.centerY)
             this.context.translate(item.centerX, item.centerY);
             this.context.rotate(angleInRadians);
             this.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
             this.context.restore();
-        };
+        
     },
     drawMap: function (tileSheet) {
         //draw a background so we can see the Canvas edges 
