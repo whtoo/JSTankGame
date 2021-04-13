@@ -1,38 +1,45 @@
 /**
  * #author whtoo
- * #Date 2013-11-20
+ * #Created Date 2013-11-20
+ * #Revised Date 2021-04-13
  */
+import tankbrigade from '../resources/tankbrigade.png';
+import '../css/main.css';
 
-window.addEventListener('load', eventWindowLoaded, false);
+function setupGame() {
+    window.addEventListener('load', eventWindowLoaded, false);
 
-function eventWindowLoaded() {
-    canvasApp();
-}
-
-function canvasSupport() {
-    return Modernizr.canvas;
-}
-
-function canvasApp() {
-    if (!canvasSupport()) {
-        return;
+    function eventWindowLoaded() {
+        canvasApp();
     }
-    else {
-        var theCanvas = document.getElementById("canvas");
-        window.context = theCanvas.getContext("2d");
-        window.gameManager = new GameObjManager();
-
-        window.render = new Render();
-        window.render.init();
-        window.apControl = new APWatcher();
-
+    
+    function canvasSupport() {
+        return true;
+    }
+    
+    function canvasApp() {
+        if (!canvasSupport()) {
+            return;
+        }
+        else {
+            var theCanvas = document.getElementById("canvas");
+            window.context = theCanvas.getContext("2d");
+            window.gameManager = new GameObjManager();
+            theCanvas.width = window.innerWidth;
+            theCanvas.height = window.innerHeight;
+            window.render = new Render();
+            window.render.init();
+            window.apControl = new APWatcher();
+    
+        }
     }
 }
+
+
 
 function APWatcher() {
     var gm = window.gameManager;
-
-    var body = $('body')[0];
+    var body = document.querySelector('body');
     
     this.keyWatcher = function (e) {
         var player = gm.gameObjects[0];
@@ -230,12 +237,12 @@ TankPlayer.prototype.rotationAP = function (direction) {
 
 //Render Object Def
 function Render() {
-    this.context = window.context;
+    window.context = window.context;
     var tileSheet = new Image();
     this.tileSheet = tileSheet;
 
     tileSheet.addEventListener('load', eventShipLoaded, false);
-    tileSheet.src = '../Resource/tankbrigade.png';
+    tileSheet.src = tankbrigade;
 
     var that = this;
 
@@ -256,11 +263,11 @@ window.requestAnimFrame = (function () {
 })();
 
 var per = 0;
-lastTime = new Date();
-offscreenCanvas = document.createElement('canvas');
+var lastTime = new Date();
+var offscreenCanvas = document.createElement('canvas');
 offscreenCanvas.width = 800;
 offscreenCanvas.height = 500;
-offscreenContext = offscreenCanvas.getContext('2d');
+var offscreenContext = offscreenCanvas.getContext('2d');
 
 function calculateFps() {
 	   var now = (+new Date),
@@ -312,7 +319,7 @@ Render.prototype = {
     },
     drawScreen: function () {
         var tileSheet = window.render.tileSheet;
-        this.context.clearRect(0, 0, 800, 500);
+        window.context.clearRect(0, 0, 800, 500);
         
         window.render.drawMap(tileSheet);
         
@@ -359,7 +366,7 @@ Render.prototype = {
                         cmd.nextX -= per;
                         item.destX += per;
                         if (cmd.nextX < per) {
-                            nextX = 0;
+                            cmd.nextX = 0;
                         }
 
                         break;
@@ -378,19 +385,23 @@ Render.prototype = {
             var animFrame = item.animSheet.getFrames();
 //            console.log(animFrame);
 
-            this.context.save();
+            window.context.save();
             //console.log("X:"+item.centerX+"+Y:"+item.centerY)
-            this.context.translate(item.centerX, item.centerY);
-            this.context.rotate(angleInRadians);
-            this.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
-            this.context.restore();
+            window.context.translate(item.centerX, item.centerY);
+            window.context.rotate(angleInRadians);
+            window.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
+            window.context.restore();
         
     },
     drawMap: function (tileSheet) {
         //draw a background so we can see the Canvas edges 
 
-     this.context.drawImage(offscreenCanvas, 0, 0,
+     window.context.drawImage(offscreenCanvas, 0, 0,
              offscreenCanvas.width, offscreenCanvas.height);
 
     }
 };
+
+setupGame();
+
+export default setupGame;
