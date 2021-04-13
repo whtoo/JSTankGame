@@ -8,7 +8,6 @@ module.exports = {
     mode : 'development',
     entry: {
         game: "./src/extreem-engine.js", 
-        main: "./css/main.css",
     },
     devtool: 'inline-source-map',
     output: {
