@@ -112,15 +112,8 @@ function SpriteAnimSheet(startAnim, stopAnim, X) {
 }
 
 SpriteAnimSheet.prototype.getFrames = function () {
-    if (this.orderIndex < this.animLength) {
-        this.orderIndex++;
-    }
-    else {
-        this.orderIndex = 0;
-    }
-
-//    var index = (parseInt(this.orderIndex) % parseInt(this.animLength));
-    return this.animationFrames[0];
+  
+    return this.animationFrames[this.orderIndex % this.animLength];
 };
 
 //单桢动画
@@ -163,6 +156,7 @@ function TankPlayer(tankID, initDirection, isUser) {
 TankPlayer.prototype = new Player();
 TankPlayer.prototype.constructor = TankPlayer;
 TankPlayer.prototype.speed = 2.4;
+TankPlayer.prototype.speedM = 6;
 
 TankPlayer.prototype.updateSelfCoor = function () {
     this.X = this.destX * this.destCook;
@@ -171,6 +165,8 @@ TankPlayer.prototype.updateSelfCoor = function () {
     this.centerY = this.Y + this.destH * 0.5;
 };
 
+var per = 0;
+per = TankPlayer.prototype.speed / 60;
 TankPlayer.prototype.rotationAP = function (direction) {
 //    console.log("dr" + direction + "===" + this.direction);
     var cmd = window.gameManager.commandList;
@@ -201,25 +197,26 @@ TankPlayer.prototype.rotationAP = function (direction) {
     }
     else {
         if(cmd.stop === false){
-            per = this.speed / 60;
+           
+            this.animSheet.orderIndex++;
             switch (direction) {
                 case 'w':
                    // console.log('press wT');
-                   cmd.nextY -= per * 2;
+                   cmd.nextY -= per * this.speedM;
                     //this.destY -= this.speed;
                     break;
                 case 's':
                     //console.log('press sT');
-                     cmd.nextY += per * 2;
+                     cmd.nextY += per * this.speedM;
                     //this.destY += this.speed;
                     break;
                 case 'a':
                    // console.log('press aT');
-                    cmd.nextX -= per * 2;
+                    cmd.nextX -= per * this.speedM;
                     //this.destX -= this.speed;
                     break;
                 case 'd':
-                     cmd.nextX += per * 2;
+                     cmd.nextX += per * this.speedM;
                     //console.log('press dT');
                     //this.destX +=  this.speed;
                     break;
@@ -262,9 +259,11 @@ window.requestAnimFrame = (function () {
             };
 })();
 
+
 var per = 0;
 var lastTime = new Date();
 var offscreenCanvas = document.createElement('canvas');
+
 offscreenCanvas.width = 800;
 offscreenCanvas.height = 500;
 var offscreenContext = offscreenCanvas.getContext('2d');
