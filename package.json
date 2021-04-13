@@ -1,0 +1,38 @@
+{
+  "name": "js_tank_game",
+  "version": "1.0.0",
+  "description": "JSTankGame ==========",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack serve --open"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/whtoo/JSTankGame.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache 2.0",
+  "devDependencies": {
+    "@babel/cli": "^7.13.14",
+    "@babel/core": "^7.13.15",
+    "@babel/preset-env": "^7.13.15",
+    "babel-loader": "^8.2.2",
+    "copy-webpack-plugin": "^8.1.1",
+    "css-loader": "^5.2.1",
+    "html-webpack-deploy-plugin": "^3.0.0",
+    "html-webpack-plugin": "^5.3.1",
+    "html-webpack-tags-plugin": "^3.0.1",
+    "mini-css-extract-plugin": "^1.4.1",
+    "style-loader": "^2.0.0",
+    "webpack": "^5.32.0",
+    "webpack-cli": "^4.6.0",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.12.1",
+    "modernizr": "^3.11.7",
+    "rxjs": "^6.6.7"
+  }
+}
