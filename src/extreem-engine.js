@@ -1,7 +1,7 @@
 /**
- * #author whtoo
- * #Created Date 2013-11-20
- * #Revised Date 2021-04-13
+ * @author whtoo
+ * @create_date 2013-11-20
+ * @revise_date 2021-04-13
  */
 import tankbrigade from '../resources/tankbrigade.png';
 import '../css/main.css';
