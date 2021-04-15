@@ -5,8 +5,10 @@
  */
 import tankbrigade from '../resources/tankbrigade.png';
 import '../css/main.css';
+import { fromEvent } from 'rxjs';
 
 function setupGame() {
+
     window.addEventListener('load', eventWindowLoaded, false);
 
     function eventWindowLoaded() {
@@ -235,11 +237,14 @@ class ImageResouce {
     constructor(url) {
         this.url = url;
         this.img = new Image();
-        this.img.addEventListener('load',this._onLoad.bind(this),false);
+
+        fromEvent(this.img,'load').subscribe((evt) => {
+            this._onLoad(evt);
+        });
         this.img.src = this.url;
     }
     
-    _onLoad() {
+    _onLoad(evt) {
         if(this.cb){
             this.cb(this.img);
         }
@@ -295,10 +300,11 @@ function calculateFps() {
 
 function offscreenCache(contextRef){
 	offscreenContext.fillStyle = "#aaaaaa";
-	offscreenContext.fillRect(0, 0, 23 * 33, 13 * 33);
-    var mapTitle = contextRef.mapTitle;
     var mapRows = 13;
-    var mapCols = 23;
+    var mapCols = 24;
+	offscreenContext.fillRect(0, 0, mapCols * 33, mapRows * 33);
+    var mapTitle = contextRef.mapTitle;
+  
 
     var mapIndexOffset = -1;
    
@@ -306,9 +312,10 @@ function offscreenCache(contextRef){
     for (var rowCtr = 0; rowCtr < mapRows; rowCtr++) {
         for (var colCtr = 0; colCtr < mapCols; colCtr++) {
             var tileId = mapTitle[rowCtr][colCtr] + mapIndexOffset;
-            var sourceX = Math.floor(tileId % 24) * 33;//tmx use line-based count
-            var sourceY = Math.floor(tileId / 24) * 33;
-            offscreenContext.drawImage(contextRef.tileSheet, sourceX, sourceY, 32, 32, colCtr * 33, rowCtr * 33, 32, 32);
+            var sourceX = parseInt(tileId % mapCols) * 33;//tmx use line-based count
+            var sourceY = parseInt(tileId / mapCols) * 33;
+            // stretch tile will earase line.
+            offscreenContext.drawImage(contextRef.tileSheet, sourceX, sourceY, 32, 32, colCtr * 33, rowCtr * 33, 33, 33);
         }
     }
 }
