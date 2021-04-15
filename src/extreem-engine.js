@@ -28,9 +28,7 @@ function setupGame() {
             theCanvas.width = window.innerWidth;
             theCanvas.height = window.innerHeight;
             window.render = new Render();
-            window.render.init();
             window.apControl = new APWatcher();
-    
         }
     }
 }
@@ -232,20 +230,39 @@ TankPlayer.prototype.rotationAP = function (direction) {
 };
 
 
+class ImageResouce {
+    
+    constructor(url) {
+        this.url = url;
+        this.img = new Image();
+        this.img.addEventListener('load',this._onLoad.bind(this),false);
+        this.img.src = this.url;
+    }
+    
+    _onLoad() {
+        if(this.cb){
+            this.cb(this.img);
+        }
+    }
+
+    onLoad(func) {
+        this.cb = func;
+    }
+
+    image() {
+        return this.img;
+    }
+}
 //Render Object Def
 function Render() {
-    window.context = window.context;
-    var tileSheet = new Image();
-    this.tileSheet = tileSheet;
+    
+    let _ = new ImageResouce(tankbrigade).onLoad(eventShipLoaded.bind(this));
 
-    tileSheet.addEventListener('load', eventShipLoaded, false);
-    tileSheet.src = tankbrigade;
-
-    var that = this;
-
-    function eventShipLoaded() {
-        that.init();
+    function eventShipLoaded(res) {
+        this.tileSheet = res;
+        this.init();
     }
+    
 }
 
 window.requestAnimFrame = (function () {
