@@ -6,6 +6,34 @@
 import tankbrigade from '../resources/tankbrigade.png';
 import '../css/main.css';
 import { fromEvent } from 'rxjs';
+class GameManager {
+    constructor(render,options) {
+
+    }
+}
+
+class GraphicRender {
+    constructor(dom,options) {
+        this._dom = dom || null;
+        this._options = options || null;
+    }
+    static instance = new GraphicRender()
+
+    set dom(dom) {
+        this._dom = dom;
+    }
+    get dom() { return this._dom; }
+
+    set options(options) {
+        this._options = options;
+    }
+
+    get options() { return this._options; }
+
+    render(renderTree) {
+
+    }
+}
 
 function setupGame() {
 
@@ -35,13 +63,16 @@ function setupGame() {
     }
 }
 
-
+function KeyInputEvent(key,code) {
+    this.key = key;
+    this.code = code;
+}
 
 function APWatcher() {
     var gm = window.gameManager;
     var body = document.querySelector('body');
     
-    this.keyWatcher = function (e) {
+    this.keyWatchDown = function (e) {
         var player = gm.gameObjects[0];
         if(gm.commandList.stop){
             gm.commandList.stop = false;
@@ -83,8 +114,7 @@ function APWatcher() {
         
     };
     body.onkeyup = this.keyWatcherUp;
-    body.onkeypress = this.keyWatcher;
-
+    body.onkeypress = this.keyWatchDown;
 }
 
 function GameObjManager() {
