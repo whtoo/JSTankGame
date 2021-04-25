@@ -70,8 +70,8 @@ function APWatcher() {
     var body = document.querySelector('body');
     let keyWatchDown = function (e) {
         let player = gm.gameObjects[0];
-        if (gm.commandList.stop) {
-            gm.commandList.stop = false;
+        if (gm.cmd.stop) {
+            gm.cmd.stop = false;
         }
         console.log(player.destY + "===" + player.destX);
         switch (e.which) {
@@ -105,8 +105,8 @@ function APWatcher() {
         }
     };
     let keyWatcherUp = function (e) {
-        gm.commandList.stop = true;
-        gm.commandList.nextX = gm.commandList.nextY = 0;
+        gm.cmd.stop = true;
+        gm.cmd.nextX = gm.cmd.nextY = 0;
 
     };
 
@@ -122,7 +122,7 @@ function GameObjManager() {
         objList.push(player);
     }
     this.gameObjects = objList;
-    this.commandList = {
+    this.cmd = {
         nextX: 0,
         nextY: 0,
         stop: true
@@ -195,11 +195,11 @@ TankPlayer.prototype.updateSelfCoor = function () {
     this.centerY = this.Y + this.destH * 0.5;
 };
 
-var per = 0;
-per = TankPlayer.prototype.speed / 60;
+let per = 0;
+per = TankPlayer.prototype.speedM / 60;
 TankPlayer.prototype.rotationAP = function (direction) {
     //    console.log("dr" + direction + "===" + this.direction);
-    var cmd = window.gameManager.commandList;
+    var cmd = window.gameManager.cmd;
     if (direction != this.direction) {
         cmd.nextX = cmd.nextY = 0;
         switch (direction) {
@@ -226,7 +226,6 @@ TankPlayer.prototype.rotationAP = function (direction) {
         this.direction = direction;
     } else {
         if (cmd.stop === false) {
-
             this.animSheet.orderIndex++;
             switch (direction) {
                 case 'w':
@@ -310,8 +309,6 @@ window.requestAnimFrame = (function () {
         };
 })();
 
-
-var per = 0;
 var lastTime = new Date();
 var offscreenCanvas = document.createElement('canvas');
 
@@ -385,7 +382,7 @@ Render.prototype = {
 
     },
     drawPlayer: function (tileSheet) {
-        var cl = window.gameManager.commandList;
+        var cl = window.gameManager.cmd;
 
         var players = window.gameManager.gameObjects;
         var item;
@@ -397,12 +394,12 @@ Render.prototype = {
 
                 switch (item.direction) {
                     case 'w':
-                        //console.log('press wT');
+                        console.log('press wT');
                         cmd.nextY += per;
                         item.destY -= per;
                         break;
                     case 's':
-                        // console.log('press sT');
+                        console.log('press sT');
                         cmd.nextY -= per;
                         item.destY += per;
                         if (cmd.nextX < per) {
@@ -410,7 +407,7 @@ Render.prototype = {
                         }
                         break;
                     case 'a':
-                        // console.log('press aT');
+                        console.log('press aT');
 
                         cmd.nextX += per;
                         item.destX -= per;
@@ -418,6 +415,7 @@ Render.prototype = {
 
                         break;
                     case 'd':
+                        console.log('press aD');
                         cmd.nextX -= per;
                         item.destX += per;
                         if (cmd.nextX < per) {
@@ -427,7 +425,7 @@ Render.prototype = {
                         break;
                     default:
 
-                        // console.log('press otherT');
+                        console.log('press otherT');
                         break;
                 }
             }
