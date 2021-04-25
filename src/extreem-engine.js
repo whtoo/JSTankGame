@@ -70,33 +70,34 @@ function APWatcher() {
     var body = document.querySelector('body');
     let keyWatchDown = function (e) {
         let player = gm.gameObjects[0];
-        if (gm.cmd.stop) {
-            gm.cmd.stop = false;
+        let cmd = gm.cmd;
+        if (cmd.stop) {
+            cmd.stop = false;
         }
-        console.log(player.destY + "===" + player.destX);
+
         switch (e.which) {
             case 119:
                 console.log('press w');
                 if (player.destY > 0) {
-                    player.rotationAP('w');
+                    player.rotationAP('w',cmd);
                 }
                 break;
             case 115:
                 console.log('press s');
                 if (player.destY < 13) {
-                    player.rotationAP('s');
+                    player.rotationAP('s',cmd);
                 }
                 break;
             case 97:
                 console.log('press a');
                 if (player.destX > 0) {
-                    player.rotationAP('a');
+                    player.rotationAP('a',cmd);
                 }
                 break;
             case 100:
                 console.log('press d');
                 if (player.destX < 24) {
-                    player.rotationAP('d');
+                    player.rotationAP('d',cmd);
                 }
                 break;
             default:
@@ -185,7 +186,6 @@ function TankPlayer(tankID, initDirection, isUser) {
 
 TankPlayer.prototype = new Player();
 TankPlayer.prototype.constructor = TankPlayer;
-TankPlayer.prototype.speed = 2.4;
 TankPlayer.prototype.speedM = 6;
 
 TankPlayer.prototype.updateSelfCoor = function () {
@@ -197,9 +197,7 @@ TankPlayer.prototype.updateSelfCoor = function () {
 
 let per = 0;
 per = TankPlayer.prototype.speedM / 60;
-TankPlayer.prototype.rotationAP = function (direction) {
-    //    console.log("dr" + direction + "===" + this.direction);
-    var cmd = window.gameManager.cmd;
+TankPlayer.prototype.rotationAP = function (direction,cmd) {
     if (direction != this.direction) {
         cmd.nextX = cmd.nextY = 0;
         switch (direction) {
@@ -332,9 +330,7 @@ function offscreenCache(contextRef) {
 
     var mapTitle = contextRef.mapTitle;
 
-
     var mapIndexOffset = -1;
-
 
     for (var rowCtr = 0; rowCtr < mapRows; rowCtr++) {
         for (var colCtr = 0; colCtr < mapCols; colCtr++) {
@@ -375,23 +371,20 @@ Render.prototype = {
 
         window.render.drawMap(tileSheet);
 
-        window.render.drawPlayer(tileSheet);
+        window.render.drawPlayer(tileSheet,gameManager.cmd);
         context.fillStyle = 'cornflowerblue';
         context.fillText(calculateFps().toFixed() + ' fps', 20, 60);
         window.requestAnimFrame(Render.prototype.drawScreen.bind(this));
 
     },
-    drawPlayer: function (tileSheet) {
-        var cl = window.gameManager.cmd;
-
+    drawPlayer: function (tileSheet,cmd) {
+        
         var players = window.gameManager.gameObjects;
         var item;
 
         for (var i = 0; i < players.length; i++) {
             item = players[i];
-            if (cl.stop === false) {
-                var cmd = cl;
-
+            if (cmd.stop === false) {
                 switch (item.direction) {
                     case 'w':
                         console.log('press wT');
@@ -402,9 +395,7 @@ Render.prototype = {
                         console.log('press sT');
                         cmd.nextY -= per;
                         item.destY += per;
-                        if (cmd.nextX < per) {
-                            cmd.nextY = 0;
-                        }
+                    
                         break;
                     case 'a':
                         console.log('press aT');
@@ -412,16 +403,12 @@ Render.prototype = {
                         cmd.nextX += per;
                         item.destX -= per;
 
-
                         break;
                     case 'd':
                         console.log('press aD');
                         cmd.nextX -= per;
                         item.destX += per;
-                        if (cmd.nextX < per) {
-                            cmd.nextX = 0;
-                        }
-
+                        
                         break;
                     default:
 
