@@ -12,6 +12,8 @@ JSTankGame
     - [ ] 基于promise的资源加载
 - [ ] 基于Reactive和Tree-Rendering的优化渲染机制
     - [ ] 基于Tree-Rendering的精灵渲染
+    - [ ] 增加渲染树
+    - [ ] 增加diff-rendering
     - [ ] dirty-check
     - [ ] 从dirty-check到passive-depency-graph
 

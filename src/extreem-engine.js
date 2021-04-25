@@ -55,8 +55,6 @@ function setupGame() {
             var theCanvas = document.getElementById("canvas");
             window.context = theCanvas.getContext("2d");
             window.gameManager = new GameObjManager();
-            theCanvas.width = window.innerWidth;
-            theCanvas.height = window.innerHeight;
             window.render = new Render();
             window.apControl = new APWatcher();
         }
@@ -332,7 +330,7 @@ function offscreenCache(contextRef){
 	offscreenContext.fillStyle = "#aaaaaa";
     var mapRows = 13;
     var mapCols = 24;
-	offscreenContext.fillRect(0, 0, mapCols * 33, mapRows * 33);
+	offscreenContext.fillRect(0, 0, (mapCols - 1) * 33, mapRows * 33);
     var mapTitle = contextRef.mapTitle;
   
 
@@ -372,7 +370,7 @@ Render.prototype = {
     },
     drawScreen: function () {
         var tileSheet = window.render.tileSheet;
-        window.context.clearRect(0, 0, 800, 500);
+        window.context.clearRect(0, 0, 800, 600);
         
         window.render.drawMap(tileSheet);
         

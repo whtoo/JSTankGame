@@ -2,6 +2,7 @@
 <html style="font-size:20px">
 <head>
     <meta charset="utf-8">
+    <meta name=”viewport” content=”width=device-width, initial-scale=1, maximum-scale=1″ user-scalable=no">
     <title><%= htmlWebpackPlugin.options.title %></title>
     <% for (var css in htmlWebpackPlugin.files.css) { %>
     <link href="<%=htmlWebpackPlugin.files.css[css] %>" rel="stylesheet">
@@ -9,7 +10,7 @@
 </head>
 <body>
 <div id="app">
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" width="800" height="600"></canvas>
 </div>
 <% for (var chunk in htmlWebpackPlugin.files.chunks) { %>
 <script type="text/javascript" src="<%=htmlWebpackPlugin.files.chunks[chunk].entry %>"></script>
