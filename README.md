@@ -6,6 +6,8 @@ JSTankGame
 
 ## Todo
 - [x] 构建工具升级
+- [x] 去除tilemap的细线
+- [x] 引入rx替换vanllia event
 - [ ] ES6改造
     - [ ] es6模块化
     - [ ] 基于生成器的原生rx系统

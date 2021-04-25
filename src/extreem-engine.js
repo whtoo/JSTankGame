@@ -42,16 +42,15 @@ function setupGame() {
     function eventWindowLoaded() {
         canvasApp();
     }
-    
+
     function canvasSupport() {
         return true;
     }
-    
+
     function canvasApp() {
         if (!canvasSupport()) {
             return;
-        }
-        else {
+        } else {
             var theCanvas = document.getElementById("canvas");
             window.context = theCanvas.getContext("2d");
             window.gameManager = new GameObjManager();
@@ -69,13 +68,12 @@ function KeyInputEvent(key,code) {
 function APWatcher() {
     var gm = window.gameManager;
     var body = document.querySelector('body');
-    
-    this.keyWatchDown = function (e) {
-        var player = gm.gameObjects[0];
-        if(gm.commandList.stop){
+    let keyWatchDown = function (e) {
+        let player = gm.gameObjects[0];
+        if (gm.commandList.stop) {
             gm.commandList.stop = false;
         }
-        console.log(player.destY +"==="+player.destX);
+        console.log(player.destY + "===" + player.destX);
         switch (e.which) {
             case 119:
                 console.log('press w');
@@ -106,13 +104,14 @@ function APWatcher() {
                 break;
         }
     };
-    this.keyWatcherUp = function (e) {
+    let keyWatcherUp = function (e) {
         gm.commandList.stop = true;
-        gm.commandList.nextX =  gm.commandList.nextY = 0;
-        
+        gm.commandList.nextX = gm.commandList.nextY = 0;
+
     };
-    body.onkeyup = this.keyWatcherUp;
-    body.onkeypress = this.keyWatchDown;
+
+    body.onkeyup = keyWatcherUp;
+    body.onkeypress = keyWatchDown;
 }
 
 function GameObjManager() {
@@ -123,7 +122,11 @@ function GameObjManager() {
         objList.push(player);
     }
     this.gameObjects = objList;
-    this.commandList = {nextX:0,nextY:0,stop:true};
+    this.commandList = {
+        nextX: 0,
+        nextY: 0,
+        stop: true
+    };
     this.isInited = 0;
 }
 
@@ -140,7 +143,6 @@ function SpriteAnimSheet(startAnim, stopAnim, X) {
 }
 
 SpriteAnimSheet.prototype.getFrames = function () {
-  
     return this.animationFrames[this.orderIndex % this.animLength];
 };
 
@@ -196,7 +198,7 @@ TankPlayer.prototype.updateSelfCoor = function () {
 var per = 0;
 per = TankPlayer.prototype.speed / 60;
 TankPlayer.prototype.rotationAP = function (direction) {
-//    console.log("dr" + direction + "===" + this.direction);
+    //    console.log("dr" + direction + "===" + this.direction);
     var cmd = window.gameManager.commandList;
     if (direction != this.direction) {
         cmd.nextX = cmd.nextY = 0;
@@ -222,29 +224,28 @@ TankPlayer.prototype.rotationAP = function (direction) {
                 break;
         }
         this.direction = direction;
-    }
-    else {
-        if(cmd.stop === false){
-           
+    } else {
+        if (cmd.stop === false) {
+
             this.animSheet.orderIndex++;
             switch (direction) {
                 case 'w':
-                   // console.log('press wT');
-                   cmd.nextY -= per * this.speedM;
+                    // console.log('press wT');
+                    cmd.nextY -= per * this.speedM;
                     //this.destY -= this.speed;
                     break;
                 case 's':
                     //console.log('press sT');
-                     cmd.nextY += per * this.speedM;
+                    cmd.nextY += per * this.speedM;
                     //this.destY += this.speed;
                     break;
                 case 'a':
-                   // console.log('press aT');
+                    // console.log('press aT');
                     cmd.nextX -= per * this.speedM;
                     //this.destX -= this.speed;
                     break;
                 case 'd':
-                     cmd.nextX += per * this.speedM;
+                    cmd.nextX += per * this.speedM;
                     //console.log('press dT');
                     //this.destX +=  this.speed;
                     break;
@@ -261,19 +262,19 @@ TankPlayer.prototype.rotationAP = function (direction) {
 
 
 class ImageResouce {
-    
+
     constructor(url) {
         this.url = url;
         this.img = new Image();
 
-        fromEvent(this.img,'load').subscribe((evt) => {
+        fromEvent(this.img, 'load').subscribe((evt) => {
             this._onLoad(evt);
         });
         this.img.src = this.url;
     }
-    
+
     _onLoad(evt) {
-        if(this.cb){
+        if (this.cb) {
             this.cb(this.img);
         }
     }
@@ -288,25 +289,25 @@ class ImageResouce {
 }
 //Render Object Def
 function Render() {
-    
+
     let _ = new ImageResouce(tankbrigade).onLoad(eventShipLoaded.bind(this));
 
     function eventShipLoaded(res) {
         this.tileSheet = res;
         this.init();
     }
-    
+
 }
 
 window.requestAnimFrame = (function () {
     return window.requestAnimationFrame ||
-            window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame ||
-            window.oRequestAnimationFrame ||
-            window.msRequestAnimationFrame ||
-            function (callback, element) {
-                window.setTimeout(callback, 1000 / 60);
-            };
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.oRequestAnimationFrame ||
+        window.msRequestAnimationFrame ||
+        function (callback, element) {
+            window.setTimeout(callback, 1000 / 60);
+        };
 })();
 
 
@@ -319,28 +320,29 @@ offscreenCanvas.height = 500;
 var offscreenContext = offscreenCanvas.getContext('2d');
 
 function calculateFps() {
-	   var now = (+new Date),
-	       fps = 1000 / (now - lastTime);
-	   lastTime = now;
-	return fps; 
+    var now = (+new Date),
+        fps = 1000 / (now - lastTime);
+    lastTime = now;
+    return fps;
 }
 
 
-function offscreenCache(contextRef){
-	offscreenContext.fillStyle = "#aaaaaa";
+function offscreenCache(contextRef) {
+    offscreenContext.fillStyle = "#aaaaaa";
     var mapRows = 13;
     var mapCols = 24;
 	offscreenContext.fillRect(0, 0, (mapCols - 1) * 33, mapRows * 33);
+
     var mapTitle = contextRef.mapTitle;
-  
+
 
     var mapIndexOffset = -1;
-   
+
 
     for (var rowCtr = 0; rowCtr < mapRows; rowCtr++) {
         for (var colCtr = 0; colCtr < mapCols; colCtr++) {
             var tileId = mapTitle[rowCtr][colCtr] + mapIndexOffset;
-            var sourceX = parseInt(tileId % mapCols) * 33;//tmx use line-based count
+            var sourceX = parseInt(tileId % mapCols) * 33; //tmx use line-based count
             var sourceY = parseInt(tileId / mapCols) * 33;
             // stretch tile will earase line.
             offscreenContext.drawImage(contextRef.tileSheet, sourceX, sourceY, 32, 32, colCtr * 33, rowCtr * 33, 33, 33);
@@ -350,30 +352,32 @@ function offscreenCache(contextRef){
 //Render Object prototype Def
 Render.prototype = {
     constructor: Render,
-    mapTitle : [[78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 55, 78, 78, 78, 78],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 100, 100, 100, 100, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 100, 100, 100, 100, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 100, 100, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 100, 100, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 100, 100, 102, 102, 102, 102, 60, 60, 60, 60, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102],
-                    [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102]],
+    mapTitle: [
+        [78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 78, 55, 78, 78, 78, 78],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 100, 100, 100, 100, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 100, 100, 100, 100, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 100, 100, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 100, 100, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 100, 100, 102, 102, 102, 102, 60, 60, 60, 60, 102, 102, 102, 102, 102, 102, 55, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102],
+        [102, 102, 102, 102, 102, 102, 102, 102, 60, 74, 74, 60, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102, 102]
+    ],
     init: function () {
-    	offscreenCache(this);
+        offscreenCache(this);
         window.requestAnimFrame(this.drawScreen);
         //		this.drawScreen();
     },
     drawScreen: function () {
         var tileSheet = window.render.tileSheet;
         window.context.clearRect(0, 0, 800, 600);
-        
+
         window.render.drawMap(tileSheet);
-        
+
         window.render.drawPlayer(tileSheet);
         context.fillStyle = 'cornflowerblue';
         context.fillText(calculateFps().toFixed() + ' fps', 20, 60);
@@ -382,36 +386,36 @@ Render.prototype = {
     },
     drawPlayer: function (tileSheet) {
         var cl = window.gameManager.commandList;
-        
+
         var players = window.gameManager.gameObjects;
         var item;
-       
+
         for (var i = 0; i < players.length; i++) {
-                item = players[i];
-                if(cl.stop === false){
+            item = players[i];
+            if (cl.stop === false) {
                 var cmd = cl;
-                
+
                 switch (item.direction) {
                     case 'w':
                         //console.log('press wT');
-                       cmd.nextY += per;
-                       item.destY -= per;
+                        cmd.nextY += per;
+                        item.destY -= per;
                         break;
                     case 's':
-                       // console.log('press sT');
-                       cmd.nextY -= per;
+                        // console.log('press sT');
+                        cmd.nextY -= per;
                         item.destY += per;
                         if (cmd.nextX < per) {
                             cmd.nextY = 0;
                         }
                         break;
                     case 'a':
-                       // console.log('press aT');
-                        
-                       cmd.nextX += per;
-                       item.destX -= per;
-                      
-                       
+                        // console.log('press aT');
+
+                        cmd.nextX += per;
+                        item.destX -= per;
+
+
                         break;
                     case 'd':
                         cmd.nextX -= per;
@@ -423,32 +427,32 @@ Render.prototype = {
                         break;
                     default:
 
-                       // console.log('press otherT');
+                        // console.log('press otherT');
                         break;
-                    }
                 }
-                
-                
-                item.updateSelfCoor();
-           
             }
-            var angleInRadians = item.arc / 180 * Math.PI;
-            var animFrame = item.animSheet.getFrames();
-//            console.log(animFrame);
 
-            window.context.save();
-            //console.log("X:"+item.centerX+"+Y:"+item.centerY)
-            window.context.translate(item.centerX, item.centerY);
-            window.context.rotate(angleInRadians);
-            window.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
-            window.context.restore();
-        
+
+            item.updateSelfCoor();
+
+        }
+        var angleInRadians = item.arc / 180 * Math.PI;
+        var animFrame = item.animSheet.getFrames();
+        //            console.log(animFrame);
+
+        window.context.save();
+        //console.log("X:"+item.centerX+"+Y:"+item.centerY)
+        window.context.translate(item.centerX, item.centerY);
+        window.context.rotate(angleInRadians);
+        window.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
+        window.context.restore();
+
     },
     drawMap: function (tileSheet) {
         //draw a background so we can see the Canvas edges 
 
-     window.context.drawImage(offscreenCanvas, 0, 0,
-             offscreenCanvas.width, offscreenCanvas.height);
+        window.context.drawImage(offscreenCanvas, 0, 0,
+            offscreenCanvas.width, offscreenCanvas.height);
 
     }
 };
