@@ -17,7 +17,7 @@ class GraphicRender {
         this._dom = dom || null;
         this._options = options || null;
     }
-    static instance = new GraphicRender()
+    static instance = new GraphicRender(document.getElementById('canvas'),{});
 
     set dom(dom) {
         this._dom = dom;
