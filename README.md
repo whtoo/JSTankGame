@@ -4,10 +4,11 @@ JSTankGame
 ## 为什么要重新开始写这个项目？
 因为，我就是想要重启`自制小游戏`😂。
 
-## Todo
+## Done
 - [x] 构建工具升级
 - [x] 去除tilemap的细线
 - [x] 引入rx替换vanllia event
+## Todo
 - [ ] ES6改造
     - [ ] es6模块化
     - [ ] 基于生成器的原生rx系统
