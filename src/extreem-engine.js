@@ -69,36 +69,44 @@ function APWatcher() {
     var gm = window.gameManager;
     var body = document.querySelector('body');
     let keyWatchDown = function (e) {
-        let player = gm.gameObjects[0];
-        let cmd = gm.cmd;
-        if (cmd.stop) {
-            cmd.stop = false;
-        }
+        // let player = gm.gameObjects[0]; // Player access removed for direct manipulation decoupling
+        // let cmd = gm.cmd; // cmd access removed for direct manipulation decoupling
+        // if (cmd.stop) { // Direct cmd manipulation removed
+        //     cmd.stop = false;
+        // }
 
         switch (e.which) {
-            case 119:
-                console.log('press w');
-                if (player.destY > 0) {
-                    player.rotationAP('w',cmd);
-                }
+            case 119: // w
+                // console.log('press w');
+                gm.inputState.direction = 'w';
+                gm.inputState.action = 'move';
+                // if (player.destY > 0) { // Direct player state check removed
+                //     player.rotationAP('w',cmd); // Direct call to rotationAP removed
+                // }
                 break;
-            case 115:
-                console.log('press s');
-                if (player.destY < 13) {
-                    player.rotationAP('s',cmd);
-                }
+            case 115: // s
+                // console.log('press s');
+                gm.inputState.direction = 's';
+                gm.inputState.action = 'move';
+                // if (player.destY < 13) { // Direct player state check removed
+                //     player.rotationAP('s',cmd); // Direct call to rotationAP removed
+                // }
                 break;
-            case 97:
-                console.log('press a');
-                if (player.destX > 0) {
-                    player.rotationAP('a',cmd);
-                }
+            case 97: // a
+                // console.log('press a');
+                gm.inputState.direction = 'a';
+                gm.inputState.action = 'move';
+                // if (player.destX > 0) { // Direct player state check removed
+                //     player.rotationAP('a',cmd); // Direct call to rotationAP removed
+                // }
                 break;
-            case 100:
-                console.log('press d');
-                if (player.destX < 24) {
-                    player.rotationAP('d',cmd);
-                }
+            case 100: // d
+                // console.log('press d');
+                gm.inputState.direction = 'd';
+                gm.inputState.action = 'move';
+                // if (player.destX < 24) { // Direct player state check removed
+                //     player.rotationAP('d',cmd); // Direct call to rotationAP removed
+                // }
                 break;
             default:
                 //console.log('press other');
@@ -106,8 +114,9 @@ function APWatcher() {
         }
     };
     let keyWatcherUp = function (e) {
-        gm.cmd.stop = true;
-        gm.cmd.nextX = gm.cmd.nextY = 0;
+        gm.inputState.action = null; // Update inputState instead of cmd
+        // gm.cmd.stop = true; // Direct cmd manipulation removed
+        // gm.cmd.nextX = gm.cmd.nextY = 0; // Direct cmd manipulation removed
 
     };
 
@@ -127,6 +136,10 @@ function GameObjManager() {
         nextX: 0,
         nextY: 0,
         stop: true
+    };
+    this.inputState = {
+        direction: null,
+        action: null
     };
     this.isInited = 0;
 }
@@ -178,6 +191,9 @@ function TankPlayer(tankID, initDirection, isUser) {
     this.destW = 33;
     this.destH = 33;
     this.arc = 0;
+    this.angleInRadians = 0; // Initialize angleInRadians
+    this.halfDestW = -this.destW / 2; // Pre-calculate halfDestW
+    this.halfDestH = -this.destH / 2; // Pre-calculate halfDestH
     this.X = this.destX * this.destCook;
     this.Y = this.destY * this.destCook;
     this.centerX = this.X + this.destW * 0.5;
@@ -222,27 +238,28 @@ TankPlayer.prototype.rotationAP = function (direction,cmd) {
                 break;
         }
         this.direction = direction;
+        this.angleInRadians = this.arc / 180 * Math.PI; // Update angleInRadians when arc changes
     } else {
         if (cmd.stop === false) {
             this.animSheet.orderIndex++;
             switch (direction) {
                 case 'w':
                     // console.log('press wT');
-                    cmd.nextY -= per * this.speedM;
+                    // cmd.nextY -= per * this.speedM; // Removed
                     //this.destY -= this.speed;
                     break;
                 case 's':
                     //console.log('press sT');
-                    cmd.nextY += per * this.speedM;
+                    // cmd.nextY += per * this.speedM; // Removed
                     //this.destY += this.speed;
                     break;
                 case 'a':
                     // console.log('press aT');
-                    cmd.nextX -= per * this.speedM;
+                    // cmd.nextX -= per * this.speedM; // Removed
                     //this.destX -= this.speed;
                     break;
                 case 'd':
-                    cmd.nextX += per * this.speedM;
+                    // cmd.nextX += per * this.speedM; // Removed
                     //console.log('press dT');
                     //this.destX +=  this.speed;
                     break;
@@ -252,7 +269,7 @@ TankPlayer.prototype.rotationAP = function (direction,cmd) {
             }
         }
         this.direction = direction;
-        this.updateSelfCoor();
+        // this.updateSelfCoor(); // Removed: Redundant as updateGame calls it after all state changes.
     }
 
 };
@@ -365,7 +382,53 @@ Render.prototype = {
         window.requestAnimFrame(this.drawScreen);
         //		this.drawScreen();
     },
+    updateGame: function() {
+        var gm = window.gameManager;
+        var player = gm.gameObjects[0]; // Assuming single player for now
+
+        // Input Processing
+        if (gm.inputState.action === 'move' && gm.inputState.direction) {
+            gm.cmd.stop = false;
+            player.rotationAP(gm.inputState.direction, gm.cmd);
+        } else {
+            gm.cmd.stop = true;
+            gm.cmd.nextX = 0;
+            gm.cmd.nextY = 0;
+        }
+
+        // Player State Update Logic
+        var players = gm.gameObjects;
+        var item;
+        for (var i = 0; i < players.length; i++) {
+            item = players[i];
+            if (gm.cmd.stop === false) { // This check might need to be coupled with inputState as well
+                switch (item.direction) { // This direction is player's current facing direction
+                    case 'w':
+                        // console.log('press wT - updateGame'); // Logging for debug
+                        item.destY -= per * item.speedM; // Incorporate item.speedM
+                        break;
+                    case 's':
+                        // console.log('press sT - updateGame');
+                        item.destY += per * item.speedM; // Incorporate item.speedM
+                        break;
+                    case 'a':
+                        // console.log('press aT - updateGame');
+                        item.destX -= per * item.speedM; // Incorporate item.speedM
+                        break;
+                    case 'd':
+                        // console.log('press dD - updateGame'); // Corrected log from aD to dD
+                        item.destX += per * item.speedM; // Incorporate item.speedM
+                        break;
+                    default:
+                        // console.log('press otherT - updateGame');
+                        break;
+                }
+            }
+            item.updateSelfCoor();
+        }
+    },
     drawScreen: function () {
+        this.updateGame(); // Call updateGame before drawing
         var tileSheet = window.render.tileSheet;
         window.context.clearRect(0, 0, 800, 600);
 
@@ -377,59 +440,28 @@ Render.prototype = {
         window.requestAnimFrame(Render.prototype.drawScreen.bind(this));
 
     },
-    drawPlayer: function (tileSheet,cmd) {
-        
+    drawPlayer: function (tileSheet /* cmd is no longer needed here directly */) {
         var players = window.gameManager.gameObjects;
-        var item;
+        var item; // Should pick the correct player, assuming players[0] for now or loop if multiple visible
+        
+        // For simplicity, assuming we draw all players or the first player.
+        // If drawing multiple players, this needs to be a loop.
+        // For now, focusing on the first player as per previous logic.
+        if (players.length > 0) {
+            item = players[0]; // Or iterate if multiple players need individual drawing logic from here
 
-        for (var i = 0; i < players.length; i++) {
-            item = players[i];
-            if (cmd.stop === false) {
-                switch (item.direction) {
-                    case 'w':
-                        console.log('press wT');
-                        cmd.nextY += per;
-                        item.destY -= per;
-                        break;
-                    case 's':
-                        console.log('press sT');
-                        cmd.nextY -= per;
-                        item.destY += per;
-                    
-                        break;
-                    case 'a':
-                        console.log('press aT');
+            // The state update logic has been moved to updateGame.
+            // This function now only handles drawing the player.
 
-                        cmd.nextX += per;
-                        item.destX -= per;
+            // var angleInRadians = item.arc / 180 * Math.PI; // Now pre-calculated as item.angleInRadians
+            var animFrame = item.animSheet.getFrames();
+            //            console.log(animFrame);
 
-                        break;
-                    case 'd':
-                        console.log('press aD');
-                        cmd.nextX -= per;
-                        item.destX += per;
-                        
-                        break;
-                    default:
-
-                        console.log('press otherT');
-                        break;
-                }
-            }
-
-
-            item.updateSelfCoor();
-
-        }
-        var angleInRadians = item.arc / 180 * Math.PI;
-        var animFrame = item.animSheet.getFrames();
-        //            console.log(animFrame);
-
-        window.context.save();
-        //console.log("X:"+item.centerX+"+Y:"+item.centerY)
-        window.context.translate(item.centerX, item.centerY);
-        window.context.rotate(angleInRadians);
-        window.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, -item.destW / 2, -item.destH / 2, item.destW, item.destH);
+            window.context.save();
+            //console.log("X:"+item.centerX+"+Y:"+item.centerY)
+            window.context.translate(item.centerX, item.centerY);
+        window.context.rotate(item.angleInRadians); // Use pre-calculated item.angleInRadians
+        window.context.drawImage(tileSheet, animFrame.sourceDx, animFrame.sourceDy, animFrame.sourceW, animFrame.sourceH, item.halfDestW, item.halfDestH, item.destW, item.destH); // Use pre-calculated item.halfDestW and item.halfDestH
         window.context.restore();
 
     },
