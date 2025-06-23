@@ -37,54 +37,47 @@ export class TankPlayer extends Player {
     }
 
     // Handles rotation and sets up movement intention in the cmd object
-    rotationAP(direction, cmd) {
-        if (direction !== this.direction) {
-            cmd.nextX = 0; // Reset movement intention if direction changes
-            cmd.nextY = 0;
-            switch (direction) {
-                case 'w':
-                    this.arc = 270; // Up
-                    break;
-                case 's':
-                    this.arc = 90;  // Down
-                    break;
-                case 'a':
-                    this.arc = 180; // Left
-                    break;
-                case 'd':
-                    this.arc = 0;   // Right
-                    break;
-                default:
-                    break;
+    rotationAP(directionAttempt, cmd) { // directionAttempt is the attempted direction from input
+        if (directionAttempt !== this.direction) {
+            this.direction = directionAttempt;
+            // Set arc based on the new direction
+            switch (this.direction) {
+                case 'w': this.arc = 270; break; // Up
+                case 's': this.arc = 90;  break; // Down
+                case 'a': this.arc = 180; break; // Left
+                case 'd': this.arc = 0;   break; // Right
+                default: break; // Should not happen with w,a,s,d keys
             }
-            this.direction = direction;
-        } else { // Direction is the same, so process movement
-            if (cmd.stop === false) { // If game is not stopped / input is active
-                if (this.animSheet) {
-                    this.animSheet.orderIndex++; // Advance animation frame
-                }
-                // Set movement intention based on current direction
-                // cmd.nextX and cmd.nextY store the DELTA for this frame based on 'per'
-                // These values will be used by the game loop or renderer to update actual position (destX/destY)
-                switch (direction) {
-                    case 'w':
-                        cmd.nextY = -this.per; // Move up (negative Y)
-                        break;
-                    case 's':
-                        cmd.nextY = this.per;  // Move down (positive Y)
-                        break;
-                    case 'a':
-                        cmd.nextX = -this.per; // Move left (negative X)
-                        break;
-                    case 'd':
-                        cmd.nextX = this.per;  // Move right (positive X)
-                        break;
-                    default:
-                        break;
-                }
-            }
-            // this.updateSelfCoor(); // Position update should happen in a game loop based on cmd.nextX/Y, not here.
-                                   // Calling it here would make it update based on old destX/Y if cmd.stop is true.
         }
+
+        // If movement is active (cmd.stop is false), set cmd.nextX/Y based on the current (possibly new) direction.
+        // APWatcher.keyWatchDown is responsible for resetting cmd.nextX/Y to 0 *before* calling this method.
+        if (cmd.stop === false) {
+            // Ensure cmd.nextX/Y are explicitly set for the current direction for this tick
+            // Redundant if APWatcher always resets, but good for clarity if rotationAP could be called from elsewhere.
+            // For this specific integration, APWatcher does reset them.
+            // cmd.nextX = 0;
+            // cmd.nextY = 0;
+
+            switch (this.direction) {
+                case 'w': cmd.nextY = -this.per; break;
+                case 's': cmd.nextY = this.per;  break;
+                case 'a': cmd.nextX = -this.per; break;
+                case 'd': cmd.nextX = this.per;  break;
+                default:
+                    // This case should ideally not be reached if input is only w,a,s,d
+                    // If it is, ensure no accidental movement from previous cmd values.
+                    // However, APWatcher resets cmd.nextX/Y before calling rotationAP,
+                    // so this explicit reset here might be redundant for the current call path.
+                    // cmd.nextX = 0;
+                    // cmd.nextY = 0;
+                    break;
+            }
+            if (this.animSheet) {
+                this.animSheet.orderIndex++; // Advance animation frame
+            }
+        }
+        // If cmd.stop is true, APWatcher's keyUp handler should have already reset cmd.nextX/Y to 0.
+        // So, no explicit else needed here to zero them out if already handled by caller.
     }
 }
