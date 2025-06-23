@@ -58,7 +58,7 @@ describe('Player Movement Integration', () => {
     player.destX = 6; // Default start X
     player.destY = 4; // Default start Y
     player.updateSelfCoor();
-    gameManager.cmd = {nextX: 0, nextY: 0, stop: true};
+    gameManager.cmd = { nextX: 0, nextY: 0, stop: true };
   });
 
   it('should move player up when "w" is pressed and game is updated', () => {
