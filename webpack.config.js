@@ -18,6 +18,7 @@ module.exports = {
         static: {
             directory: path.resolve(__dirname, 'dist'),
           },
+        // contentBase: './dist', // Deprecated in webpack-dev-server v4+
     },
     plugins:[
         new MiniCssExtractPlugin(),
