@@ -15,7 +15,9 @@ module.exports = {
         filename: '[name].js'
     },
     devServer: {
-        contentBase : './dist',
+        static: {
+            directory: path.resolve(__dirname, 'dist'),
+          },
     },
     plugins:[
         new MiniCssExtractPlugin(),
