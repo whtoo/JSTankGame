@@ -15,6 +15,7 @@ const mockGameManager = {
     nextX: 0,
     nextY: 0,
     stop: true,
+    fire: false,
   },
 };
 
@@ -34,7 +35,7 @@ describe('APWatcher', () => {
   beforeEach(() => {
     // Reset mocks and gameManager state before each test
     mockPlayerRotationAP.mockClear();
-    mockGameManager.cmd = { nextX: 0, nextY: 0, stop: true };
+    mockGameManager.cmd = { nextX: 0, nextY: 0, stop: true, fire: false };
     mockGameManager.gameObjects[0] = mockPlayer; // Ensure player mock is reset if modified
 
     // Set up a fresh body for each test to avoid listener conflicts
@@ -105,7 +106,19 @@ describe('APWatcher', () => {
     // Add similar boundary tests for s, a, d if needed, adjusting mockPlayer.destY/destX
   });
 
-  describe('keyWatcherUp', () => {
+  describe('keyWatchDown - firing', () => {
+    it('should set cmd.fire to true for spacebar (32)', () => {
+      simulateKeyEvent(body, 'keypress', 32); // Spacebar
+      expect(mockGameManager.cmd.fire).toBe(true);
+    });
+
+    it('should not call rotationAP for spacebar', () => {
+      simulateKeyEvent(body, 'keypress', 32); // Spacebar
+      expect(mockPlayerRotationAP).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('keyWatcherUp - firing', () => {
     it('should set cmd.stop to true on key up', () => {
       // First, simulate a key press to set stop to false
       simulateKeyEvent(body, 'keypress', 119); // 'w' key

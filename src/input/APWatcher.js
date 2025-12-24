@@ -34,6 +34,7 @@ export class APWatcher {
         // Using e.key for modern browsers, falling back to e.which for wider compatibility if needed.
         // For this refactor, sticking to e.which as per original code.
         // 'w' = 119, 's' = 115, 'a' = 97, 'd' = 100
+        // Spacebar = 32 (for shooting)
         switch (e.which) {
             case 119: // w - Move Up
                 // console.log('press w');
@@ -58,6 +59,10 @@ export class APWatcher {
                 if (player.destX < 24) { // Boundary check (example, 24 might be map width boundary)
                     player.rotationAP('d', cmd);
                 }
+                break;
+            case 32: // Spacebar - Fire
+                // console.log('press spacebar - fire!');
+                cmd.fire = true;
                 break;
             default:
                 // console.log('press other key:', e.which);

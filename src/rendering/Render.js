@@ -119,6 +119,7 @@ export class Render {
         const player = this.gameManager.gameObjects[0];
         const cmd = this.gameManager.cmd;
 
+        // Movement update
         if (cmd.stop === false) {
             // Apply movement based on cmd.nextX/Y which are set by TankPlayer.rotationAP
             // These represent fractions of a tile.
@@ -135,6 +136,23 @@ export class Render {
             player.destX = Math.max(0, Math.min(player.destX, 23));
 
             player.updateSelfCoor(); // Update pixel X, Y based on new destX, destY
+        }
+
+        // Firing logic
+        if (cmd.fire && player && player.shoot) {
+            const bullet = player.shoot();
+            if (bullet && this.gameManager.addBullet) {
+                this.gameManager.addBullet(bullet);
+            }
+            cmd.fire = false; // Reset fire trigger after processing
+        }
+
+        // Bullet updates
+        if (this.gameManager.updateBullets) {
+            // Map dimensions: 23 cols * 33px, 13 rows * 33px
+            const mapWidth = 23 * 33;  // 759px
+            const mapHeight = 13 * 33; // 429px
+            this.gameManager.updateBullets(deltaTime, mapWidth, mapHeight);
         }
     }
 
@@ -155,6 +173,7 @@ export class Render {
 
         this.drawMap();
         this.drawPlayer();
+        this.drawBullets();
 
         this.context.fillStyle = 'cornflowerblue';
         this.context.fillText(`${this._calculateFps().toFixed()} fps`, 20, 60);
@@ -197,5 +216,33 @@ export class Render {
     drawMap() {
         this.context.drawImage(this.offscreenCanvas, 0, 0,
             this.offscreenCanvas.width, this.offscreenCanvas.height);
+    }
+
+    /**
+     * Draws all active bullets on the canvas.
+     * Bullets are drawn as colored rectangles (yellow for player, red for enemy).
+     * TODO: Replace with sprite rendering when bullet sprites are available.
+     */
+    drawBullets() {
+        if (!this.gameManager.getBullets) return;
+
+        const bullets = this.gameManager.getBullets();
+        if (!bullets || bullets.length === 0) return;
+
+        for (const bullet of bullets) {
+            this.context.save();
+
+            // Draw bullet as colored rectangle (yellow for player, red for enemy)
+            // TODO: Replace with sprite rendering once bullet sprites are available
+            this.context.fillStyle = bullet.owner === 'player' ? '#ffff00' : '#ff0000';
+            this.context.fillRect(
+                bullet.x - bullet.width / 2,
+                bullet.y - bullet.height / 2,
+                bullet.width,
+                bullet.height
+            );
+
+            this.context.restore();
+        }
     }
 }

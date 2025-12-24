@@ -1,4 +1,5 @@
 import { TankPlayer } from './TankPlayer.js';
+import { Bullet } from './Bullet.js';
 
 describe('TankPlayer', () => {
   let tankPlayer;
@@ -133,6 +134,150 @@ describe('TankPlayer', () => {
       tankPlayer.rotationAP('d', mockCmd);
       expect(mockCmd.nextX).toBe(0); // Should remain 0 as it was initialized
       expect(mockCmd.nextY).toBe(0); // Should remain 0
+    });
+  });
+
+  describe('Shooting - constructor weapon properties', () => {
+    it('should initialize with powerLevel 0', () => {
+      expect(tankPlayer.powerLevel).toBe(0);
+    });
+
+    it('should initialize with maxBullets 1', () => {
+      expect(tankPlayer.maxBullets).toBe(1);
+    });
+
+    it('should initialize with empty activeBullets array', () => {
+      expect(tankPlayer.activeBullets).toEqual([]);
+    });
+  });
+
+  describe('shoot', () => {
+    it('should return a Bullet object', () => {
+      const bullet = tankPlayer.shoot();
+      expect(bullet).toBeDefined();
+      expect(bullet instanceof Bullet).toBe(true);
+    });
+
+    it('should create bullet at tank position', () => {
+      const bullet = tankPlayer.shoot();
+      expect(bullet.x).toBe(tankPlayer.centerX);
+      expect(bullet.y).toBe(tankPlayer.centerY);
+    });
+
+    it('should set bullet direction to tank direction', () => {
+      tankPlayer.direction = 'w';
+      const bullet = tankPlayer.shoot();
+      expect(bullet.direction).toBe('w');
+    });
+
+    it('should set bullet owner based on isPlayer', () => {
+      const bullet = tankPlayer.shoot();
+      expect(bullet.owner).toBe('player');
+    });
+
+    it('should set bullet powerLevel to tank powerLevel', () => {
+      tankPlayer.powerLevel = 2;
+      const bullet = tankPlayer.shoot();
+      expect(bullet.powerLevel).toBe(2);
+    });
+
+    it('should add bullet to activeBullets array', () => {
+      expect(tankPlayer.activeBullets.length).toBe(0);
+      const bullet = tankPlayer.shoot();
+      expect(tankPlayer.activeBullets.length).toBe(1);
+      expect(tankPlayer.activeBullets[0]).toBe(bullet);
+    });
+
+    it('should return null when maxBullets reached', () => {
+      tankPlayer.shoot();
+      const secondBullet = tankPlayer.shoot();
+      expect(secondBullet).toBeNull();
+    });
+
+    it('should allow 2 bullets when powerLevel >= 2', () => {
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon();
+      expect(tankPlayer.maxBullets).toBe(2);
+
+      const bullet1 = tankPlayer.shoot();
+      const bullet2 = tankPlayer.shoot();
+
+      expect(bullet1).toBeDefined();
+      expect(bullet2).toBeDefined();
+      expect(bullet1).not.toBe(bullet2);
+      expect(tankPlayer.activeBullets.length).toBe(2);
+    });
+  });
+
+  describe('upgradeWeapon', () => {
+    it('should increase powerLevel by 1', () => {
+      tankPlayer.upgradeWeapon();
+      expect(tankPlayer.powerLevel).toBe(1);
+    });
+
+    it('should not exceed powerLevel 3', () => {
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon(); // 4th upgrade
+      expect(tankPlayer.powerLevel).toBe(3);
+    });
+
+    it('should set maxBullets to 2 when powerLevel reaches 2', () => {
+      tankPlayer.upgradeWeapon(); // 1
+      expect(tankPlayer.maxBullets).toBe(1);
+
+      tankPlayer.upgradeWeapon(); // 2
+      expect(tankPlayer.maxBullets).toBe(2);
+    });
+
+    it('should keep maxBullets at 2 when powerLevel reaches 3', () => {
+      tankPlayer.upgradeWeapon(); // 1
+      tankPlayer.upgradeWeapon(); // 2
+      tankPlayer.upgradeWeapon(); // 3
+      expect(tankPlayer.maxBullets).toBe(2);
+    });
+  });
+
+  describe('resetWeapon', () => {
+    it('should reset powerLevel to 0', () => {
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon();
+      tankPlayer.resetWeapon();
+      expect(tankPlayer.powerLevel).toBe(0);
+    });
+
+    it('should reset maxBullets to 1', () => {
+      tankPlayer.upgradeWeapon();
+      tankPlayer.upgradeWeapon();
+      tankPlayer.resetWeapon();
+      expect(tankPlayer.maxBullets).toBe(1);
+    });
+
+    it('should clear activeBullets array', () => {
+      tankPlayer.shoot();
+      expect(tankPlayer.activeBullets.length).toBe(1);
+      tankPlayer.resetWeapon();
+      expect(tankPlayer.activeBullets).toEqual([]);
+    });
+  });
+
+  describe('removeBullet', () => {
+    it('should remove bullet from activeBullets array', () => {
+      const bullet = tankPlayer.shoot();
+      expect(tankPlayer.activeBullets.length).toBe(1);
+
+      tankPlayer.removeBullet(bullet);
+      expect(tankPlayer.activeBullets.length).toBe(0);
+    });
+
+    it('should handle removing non-existent bullet gracefully', () => {
+      const fakeBullet = new Bullet(0, 0, 'w', 'player', 0);
+      expect(() => tankPlayer.removeBullet(fakeBullet)).not.toThrow();
+    });
+
+    it('should handle removing from empty activeBullets', () => {
+      expect(() => tankPlayer.removeBullet(null)).not.toThrow();
     });
   });
 });

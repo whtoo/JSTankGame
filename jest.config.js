@@ -15,4 +15,6 @@ module.exports = {
   verbose: true,
   // The test environment that will be used for testing.
   testEnvironment: 'jsdom', // Using jsdom to simulate a browser environment
+  // Exclude E2E tests from Jest (they're run by Playwright separately)
+  testPathIgnorePatterns: ['<rootDir>/e2e/'],
 };
