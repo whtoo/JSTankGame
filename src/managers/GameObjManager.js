@@ -1,35 +1,334 @@
 import { TankPlayer } from '../entities/TankPlayer.js';
+import { EnemyTank } from '../entities/EnemyTank.js';
 import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import { getMapConfig } from '../game/MapConfig.js';
+import { CollisionSystem } from '../systems/CollisionSystem.js';
 
 export class GameObjManager {
-    constructor() {
-        const objList = [];
-        // Create a single player tank for now
-        for (let i = 0; i < 1; i++) {
-            const player = new TankPlayer(`Tank${i}`, 'w', 0); // Initial direction 'w' (up)
-            player.animSheet = new SpriteAnimSheet(3, 9, 16); // Assign animation sheet
-            objList.push(player);
-        }
-        this.gameObjects = objList; // List of all game objects (currently just one player)
+    /**
+     * @param {object} options - Configuration options
+     * @param {LevelManager} options.levelManager - Level manager instance (optional)
+     * @param {CollisionSystem} options.collisionSystem - Collision system instance (optional)
+     */
+    constructor(options = {}) {
+        this.levelManager = options.levelManager || null;
+        this.collisionSystem = options.collisionSystem ||
+            new CollisionSystem(this.levelManager, { tileSize: 33 });
 
-        // Command object for player actions, shared with input handler (APWatcher)
-        // and potentially game loop.
+        // Create player tank
+        const playerStart = this.levelManager ? this.levelManager.getPlayerStart() : null;
+        const startX = playerStart ? playerStart.x * 33 + 33/2 : 12 * 33 + 33/2;
+        const startY = playerStart ? playerStart.y * 33 + 33/2 : 12 * 33 + 33/2;
+        const startDir = playerStart ? playerStart.direction : 'w';
+
+        const player = new TankPlayer('Player', startDir, 0);
+        player.x = startX;
+        player.y = startY;
+        player.updateSelfCoor();
+        player.animSheet = new SpriteAnimSheet(3, 9, 16);
+
+        this.gameObjects = [player];
+
+        // Command object for player actions
         this.cmd = {
-            nextX: 0,    // Intended movement delta X for the current frame/update
-            nextY: 0,    // Intended movement delta Y for the current frame/update
-            stop: true,  // Flag to indicate if movement should stop (e.g., on key release)
-            fire: false  // Flag to trigger shooting
+            nextX: 0,
+            nextY: 0,
+            stop: true,
+            fire: false
         };
-        this.isInited = 0; // TODO: What is this for? Can it be removed or clarified?
 
         // Bullets management
-        this.bullets = []; // Track all active bullets in game
+        this.bullets = [];
+
+        // Enemies management
+        this.enemies = [];
+        this.enemiesRemaining = 0;
+        this.enemiesOnField = 0;
+        this.spawnTimer = 0;
+        this.spawnInterval = 3.0;
+
+        // Cache map config
+        this.mapConfig = getMapConfig();
+
+        // Initialize enemies from level
+        this._initEnemies();
+    }
+
+    /**
+     * Initialize enemies from level configuration
+     */
+    _initEnemies() {
+        if (!this.levelManager || !this.levelManager.currentLevel) return;
+
+        const enemyConfig = this.levelManager.getEnemyConfig();
+        if (!enemyConfig) return;
+
+        this.enemiesRemaining = enemyConfig.total;
+        this.enemiesOnField = 0;
+        this.spawnInterval = enemyConfig.spawnInterval || 3.0;
+        this.spawnTimer = 0;
+        this.enemies = [];
+    }
+
+    /**
+     * Spawn an enemy at a spawn point
+     */
+    spawnEnemy() {
+        if (!this.levelManager) return null;
+
+        const enemyConfig = this.levelManager.getEnemyConfig();
+        if (!enemyConfig || this.enemiesOnField >= enemyConfig.maxOnField) return null;
+
+        const spawnPoints = this.levelManager.getEnemySpawnPoints();
+        if (spawnPoints.length === 0) return null;
+
+        // Select random spawn point
+        const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
+
+        // Select random enemy type
+        const type = this.levelManager.selectRandomEnemyType();
+
+        const enemy = new EnemyTank({
+            type,
+            x: spawnPoint.x,
+            y: spawnPoint.y,
+            direction: 's' // Enemies spawn facing down
+        });
+
+        this.enemies.push(enemy);
+        this.enemiesOnField++;
+        this.enemiesRemaining--;
+
+        return enemy;
+    }
+
+    /**
+     * Get the player bounds (from level manager or default config)
+     * @returns {object} Bounds object with minX, maxX, minY, maxY
+     */
+    getBounds() {
+        if (this.levelManager && this.levelManager.currentLevel) {
+            const grid = this.levelManager.getMapGrid();
+            if (grid && grid[0]) {
+                return {
+                    minX: 0,
+                    maxX: grid[0].length - 1,
+                    minY: 0,
+                    maxY: grid.length - 1
+                };
+            }
+        }
+        return this.mapConfig.playerBounds;
+    }
+
+    /**
+     * Get map dimensions
+     * @returns {object} { width, height } in tiles
+     */
+    getMapDimensions() {
+        if (this.levelManager && this.levelManager.currentLevel) {
+            const grid = this.levelManager.getMapGrid();
+            if (grid) {
+                return {
+                    width: grid[0].length,
+                    height: grid.length
+                };
+            }
+        }
+        return {
+            width: this.mapConfig.cols,
+            height: this.mapConfig.rows
+        };
+    }
+
+    /**
+     * Get all tanks (player + enemies) for collision checking
+     */
+    getAllTanks() {
+        const tanks = [...this.gameObjects];
+        for (const enemy of this.enemies) {
+            if (enemy.active) {
+                tanks.push(enemy);
+            }
+        }
+        return tanks;
+    }
+
+    /**
+     * Main game update method - handles all game logic
+     * @param {number} deltaTime - Time since last frame in seconds
+     */
+    update(deltaTime) {
+        if (!this.gameObjects || this.gameObjects.length === 0) {
+            return;
+        }
+
+        const player = this.gameObjects[0];
+        const cmd = this.cmd;
+        const bounds = this.getBounds();
+        const mapDims = this.getMapDimensions();
+
+        // Player movement with collision detection
+        if (cmd.stop === false) {
+            let newDestY = player.destY;
+            let newDestX = player.destX;
+
+            if (cmd.nextY !== 0) newDestY += cmd.nextY;
+            if (cmd.nextX !== 0) newDestX += cmd.nextX;
+
+            // Check collision with walls
+            const collision = this.collisionSystem.checkTankCollision(
+                { x: player.x, y: player.y, width: 30, height: 30 },
+                cmd.nextX !== 0 ? (cmd.nextX > 0 ? 'd' : 'a') : (cmd.nextY > 0 ? 's' : 'w'),
+                Math.max(Math.abs(cmd.nextX), Math.abs(cmd.nextY)) * this.mapConfig.tileRenderSize
+            );
+
+            if (!collision.collision) {
+                player.destY = Math.max(bounds.minY, Math.min(newDestY, bounds.maxY));
+                player.destX = Math.max(bounds.minX, Math.min(newDestX, bounds.maxX));
+                player.updateSelfCoor();
+            }
+        }
+
+        // Firing logic
+        if (cmd.fire && player && player.shoot) {
+            const bullet = player.shoot();
+            if (bullet && this.addBullet) {
+                this.addBullet(bullet);
+            }
+            cmd.fire = false;
+        }
+
+        // Update enemies
+        this._updateEnemies(deltaTime);
+
+        // Update bullets with collision detection
+        if (this.updateBullets) {
+            const mapWidth = mapDims.width * this.mapConfig.tileRenderSize;
+            const mapHeight = mapDims.height * this.mapConfig.tileRenderSize;
+            this._updateAllBullets(deltaTime, mapWidth, mapHeight);
+        }
+
+        // Spawn new enemies
+        this._updateSpawning(deltaTime);
+    }
+
+    /**
+     * Update all enemies
+     */
+    _updateEnemies(deltaTime) {
+        const player = this.gameObjects[0];
+        const gameState = { player };
+
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            if (!enemy.active) {
+                this.enemies.splice(i, 1);
+                continue;
+            }
+
+            enemy.update(deltaTime, gameState);
+
+            // Add enemy bullets to game bullets
+            if (enemy.activeBullets) {
+                for (const bullet of enemy.activeBullets) {
+                    if (bullet && bullet.active && !this.bullets.includes(bullet)) {
+                        this.bullets.push(bullet);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Update enemy spawning
+     */
+    _updateSpawning(deltaTime) {
+        if (this.enemiesRemaining <= 0) return;
+
+        this.spawnTimer += deltaTime;
+        if (this.spawnTimer >= this.spawnInterval) {
+            this.spawnEnemy();
+            this.spawnTimer = 0;
+        }
+    }
+
+    /**
+     * Update all bullets with collision
+     */
+    _updateAllBullets(deltaTime, mapWidth, mapHeight) {
+        const player = this.gameObjects[0];
+        const allTanks = this.getAllTanks();
+
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+            bullet.update(deltaTime);
+
+            // Check collision
+            const collision = this.collisionSystem.checkBulletCollision(
+                bullet,
+                allTanks,
+                bullet.owner === 'player'
+            );
+
+            if (collision.type !== 'none') {
+                // Handle collision
+                if (collision.type === 'wall') {
+                    // Destroy brick walls
+                    if (collision.destructible) {
+                        this.collisionSystem.destroyTile(collision.tileX, collision.tileY);
+                    }
+                    bullet.active = false;
+                    this._removeBullet(bullet);
+                } else if (collision.type === 'tank') {
+                    const points = collision.target.takeDamage();
+                    if (points > 0 && this.onEnemyDestroyed) {
+                        this.onEnemyDestroyed(collision.target, points);
+                    }
+                    bullet.active = false;
+                    this._removeBullet(bullet);
+                } else if (collision.type === 'base') {
+                    // Base destroyed - game over
+                    if (this.onBaseDestroyed) {
+                        this.onBaseDestroyed();
+                    }
+                    bullet.active = false;
+                    this._removeBullet(bullet);
+                }
+            }
+
+            // Remove out-of-bounds bullets
+            if (bullet.isOutOfBounds(mapWidth, mapHeight)) {
+                this._removeBullet(bullet);
+            }
+        }
+    }
+
+    /**
+     * Remove a bullet from tracking
+     */
+    _removeBullet(bullet) {
+        const index = this.bullets.indexOf(bullet);
+        if (index !== -1) {
+            this.bullets.splice(index, 1);
+        }
+
+        // Also remove from player's tracking
+        const player = this.gameObjects[0];
+        if (player && player.removeBullet) {
+            player.removeBullet(bullet);
+        }
+
+        // Remove from enemy tracking
+        for (const enemy of this.enemies) {
+            if (enemy.active && enemy.removeBullet) {
+                enemy.removeBullet(bullet);
+            }
+        }
     }
 
     /**
      * Adds a bullet to the game.
-     *
-     * @param {Bullet} bullet - The bullet to add
      */
     addBullet(bullet) {
         if (bullet && bullet.active) {
@@ -39,58 +338,38 @@ export class GameObjManager {
 
     /**
      * Removes a bullet from the game.
-     * Also notifies the tank owner to stop tracking it.
-     *
-     * @param {Bullet} bullet - The bullet to remove
      */
     removeBullet(bullet) {
-        if (!bullet) return;
-
-        const index = this.bullets.indexOf(bullet);
-        if (index !== -1) {
-            this.bullets.splice(index, 1);
-        }
-
-        // Also remove from owner's tracking
-        const player = this.gameObjects[0];
-        if (player && player.removeBullet) {
-            player.removeBullet(bullet);
-        }
+        this._removeBullet(bullet);
     }
 
     /**
      * Updates all bullets (movement, bounds checking).
-     * Removes bullets that go out of bounds.
-     *
-     * @param {number} deltaTime - Time since last frame in seconds
-     * @param {number} mapWidth - Map width in pixels
-     * @param {number} mapHeight - Map height in pixels
+     * This method is kept for backward compatibility.
      */
     updateBullets(deltaTime, mapWidth, mapHeight) {
-        for (let i = this.bullets.length - 1; i >= 0; i--) {
-            const bullet = this.bullets[i];
-            bullet.update(deltaTime);
-
-            // Remove out-of-bounds bullets
-            if (bullet.isOutOfBounds(mapWidth, mapHeight)) {
-                this.bullets.splice(i, 1);
-                // Also remove from player's tracking
-                const player = this.gameObjects[0];
-                if (player && player.removeBullet) {
-                    player.removeBullet(bullet);
-                }
-            }
-        }
+        // Use the full update with collision detection
+        this._updateAllBullets(deltaTime, mapWidth, mapHeight);
     }
 
     /**
      * Gets all active bullets.
-     *
-     * @returns {Array<Bullet>} Array of active bullets
      */
     getBullets() {
         return this.bullets;
     }
 
-    // TODO: Add methods to manage game objects, e.g., add, remove, updateAll, etc.
+    /**
+     * Get score
+     */
+    getScore() {
+        return this.score || 0;
+    }
+
+    /**
+     * Add score
+     */
+    addScore(points) {
+        this.score = (this.score || 0) + points;
+    }
 }

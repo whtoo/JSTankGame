@@ -1,30 +1,34 @@
 import { GameObjManager } from './managers/GameObjManager.js';
 import { Render } from './rendering/Render.js';
 import { APWatcher } from './input/APWatcher.js';
-// CSS import, assuming Webpack handles this (e.g., with style-loader/css-loader)
+import { GameLoop } from './game/GameLoop.js';
+import { StateManager, GameStateType } from './game/GameState.js';
+import { LevelManager } from './game/levels/LevelManager.js';
+import { setLogLevel, LogLevel } from './utils/Logger.js';
+import { GAME_CONFIG } from './game/GameConfig.js';
 import '../css/main.css';
+
+// Configure logging
+if (!GAME_CONFIG.debugMode) {
+    setLogLevel(LogLevel.WARN); // Only show warnings and errors in production
+}
 
 // The main game setup and initialization function
 export function setupGame() {
-    // Ensure the DOM is fully loaded before trying to get canvas or attach body listeners
     window.addEventListener('load', eventWindowLoaded, false);
 }
 
 function eventWindowLoaded() {
-    // canvasApp sets up the core game components
     canvasApp();
 }
 
 function canvasSupport() {
-    // Modern browsers all support canvas, so this check is mostly legacy.
-    // Could add more robust feature detection if needed.
     return !!document.createElement('canvas').getContext;
 }
 
 function canvasApp() {
     if (!canvasSupport()) {
         console.error("HTML5 Canvas is not supported in this browser.");
-        // Optionally, display a message to the user in the DOM
         return;
     }
 
@@ -40,32 +44,77 @@ function canvasApp() {
         return;
     }
 
-    // Instantiate game components
-    const gameManager = new GameObjManager();
-    // Render instance needs the main canvas context and a reference to the game manager
-    const render = new Render(context, gameManager);
-    // APWatcher needs a reference to the game manager to update its command object
-    const apWatcher = new APWatcher(gameManager); // apWatcher sets up its own event listeners
+    // Instantiate level manager (loads level 1 by default)
+    const levelManager = new LevelManager({
+        startLevel: 1,
+        loopLevels: false,
+        onLevelStart: (level) => {
+            console.log(`Starting level ${level.id}: ${level.name}`);
+            // Refresh render cache when level changes
+            // This will be handled by the render component
+        },
+        onLevelComplete: (result) => {
+            console.log(`Level ${result.level} completed! Stars: ${result.stars}`);
+            // TODO: Show level complete screen
+        },
+        onGameOver: (result) => {
+            console.log(result.victory ? "Victory!" : "Game Over");
+            // TODO: Show game over screen
+        }
+    });
 
-    // Game is now initialized. Render loop is started within Render's constructor (initGameLoop).
-    // Input listeners are active via APWatcher.
-    // Game objects are managed by GameObjManager.
+    // Instantiate game components with level manager
+    const gameManager = new GameObjManager({ levelManager });
+    const render = new Render(context, gameManager, { levelManager });
+    const apWatcher = new APWatcher(gameManager);
 
-    // console.log("Game setup complete. APWatcher, GameManager, and Render initialized.");
+    // Create state manager
+    const stateManager = new StateManager();
+
+    // Create and start the game loop with fixed timestep
+    const gameLoop = new GameLoop(gameManager, render, stateManager, {
+        fixedDelta: 1 / 60,  // 60 updates per second
+        maxDelta: 0.1,       // Cap for lag spikes
+        interpolate: true    // Enable frame interpolation
+    });
+
+    // Setup input handlers for state transitions
+    setupStateInputHandlers(apWatcher, stateManager, levelManager);
+
+    // Setup level change handler to refresh render cache
+    if (levelManager.onLevelStart) {
+        const originalOnLevelStart = levelManager.onLevelStart.bind(levelManager);
+        levelManager.onLevelStart = (level) => {
+            originalOnLevelStart(level);
+            render.refreshMapCache();
+        };
+    }
+
+    // Start game in playing state (or menu based on config)
+    if (GAME_CONFIG.autoStart) {
+        stateManager.startGame();
+    } else {
+        stateManager.toMenu();
+    }
+
+    gameLoop.start();
+
+    // Expose level manager for debugging
+    if (GAME_CONFIG.debugMode) {
+        window.gameLevelManager = levelManager;
+        window.gameManager = gameManager;
+        window.gameLoop = gameLoop;
+    }
+
+    // console.log("Game setup complete.");
 }
 
-// Call setupGame to kick things off
-setupGame();
+/**
+ * Setup input handlers for state transitions
+ */
+function setupStateInputHandlers(apWatcher, stateManager, levelManager) {
+    // Pause functionality is handled by APWatcher keyup
+    // Add additional state transition handlers here if needed
+}
 
-// Note: The original extreem-engine.js also had an export default setupGame.
-// If this module (main.js) is the new entry point for Webpack,
-// then just calling setupGame() might be sufficient, and no export is strictly needed
-// unless other parts of a larger system were intended to call setupGame() again.
-// For now, keeping the export signature similar if it was intended.
-// However, typically, an entry point module executes its setup code directly.
-// If setupGame is exported, then another file (the actual webpack entry) would import and call it.
-// Given the current structure, direct execution by calling setupGame() here is fine.
-// Removing the export if this is the final entry point.
-// Let's assume this will be the main entry point for Webpack for now.
-// export default setupGame; // Remove if this is the direct entry for webpack.
-// If webpack.config.js points to this file, the `setupGame()` call is enough.
+setupGame();
