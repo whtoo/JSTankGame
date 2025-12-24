@@ -2,3 +2,10 @@ nbproject
 node_modules/
 *-lock.json
 dist
+.playwright-mcp/
+.playwright/
+.vscode/
+.gitignore
+test-results/
+playwright-report/*
+coverage/
