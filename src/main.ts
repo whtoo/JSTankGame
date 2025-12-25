@@ -1,3 +1,7 @@
+/**
+ * Main game initialization and setup
+ */
+
 import { GameObjManager } from './managers/GameObjManager.js';
 import { Render } from './rendering/Render.js';
 import { APWatcher } from './input/APWatcher.js';
@@ -10,29 +14,29 @@ import '../css/main.css';
 
 // Configure logging
 if (!GAME_CONFIG.debugMode) {
-    setLogLevel(LogLevel.WARN); // Only show warnings and errors in production
+    setLogLevel(LogLevel.WARN);
 }
 
 // The main game setup and initialization function
-export function setupGame() {
+export function setupGame(): void {
     window.addEventListener('load', eventWindowLoaded, false);
 }
 
-function eventWindowLoaded() {
+function eventWindowLoaded(): void {
     canvasApp();
 }
 
-function canvasSupport() {
+function canvasSupport(): boolean {
     return !!document.createElement('canvas').getContext;
 }
 
-function canvasApp() {
+function canvasApp(): void {
     if (!canvasSupport()) {
         console.error("HTML5 Canvas is not supported in this browser.");
         return;
     }
 
-    const theCanvas = document.getElementById("canvas");
+    const theCanvas = document.getElementById("canvas") as HTMLCanvasElement;
     if (!theCanvas) {
         console.error("Canvas element with ID 'canvas' not found in the DOM!");
         return;
@@ -44,26 +48,22 @@ function canvasApp() {
         return;
     }
 
-    // Instantiate level manager (loads level 1 by default)
+    // Instantiate level manager
     const levelManager = new LevelManager({
         startLevel: 1,
         loopLevels: false,
         onLevelStart: (level) => {
             console.log(`Starting level ${level.id}: ${level.name}`);
-            // Refresh render cache when level changes
-            // This will be handled by the render component
         },
         onLevelComplete: (result) => {
             console.log(`Level ${result.level} completed! Stars: ${result.stars}`);
-            // TODO: Show level complete screen
         },
         onGameOver: (result) => {
             console.log(result.victory ? "Victory!" : "Game Over");
-            // TODO: Show game over screen
         }
     });
 
-    // Instantiate game components with level manager
+    // Instantiate game components
     const gameManager = new GameObjManager({ levelManager });
     const render = new Render(context, gameManager, { levelManager });
     const apWatcher = new APWatcher(gameManager);
@@ -71,26 +71,23 @@ function canvasApp() {
     // Create state manager
     const stateManager = new StateManager();
 
-    // Create and start the game loop with fixed timestep
+    // Create and start the game loop
     const gameLoop = new GameLoop(gameManager, render, stateManager, {
-        fixedDelta: 1 / 60,  // 60 updates per second
-        maxDelta: 0.1,       // Cap for lag spikes
-        interpolate: true    // Enable frame interpolation
+        fixedDelta: 1 / 60,
+        maxDelta: 0.1,
+        interpolate: true
     });
 
-    // Setup input handlers for state transitions
-    setupStateInputHandlers(apWatcher, stateManager, levelManager);
-
     // Setup level change handler to refresh render cache
-    if (levelManager.onLevelStart) {
-        const originalOnLevelStart = levelManager.onLevelStart.bind(levelManager);
+    const originalOnLevelStart = levelManager.onLevelStart?.bind(levelManager);
+    if (originalOnLevelStart) {
         levelManager.onLevelStart = (level) => {
             originalOnLevelStart(level);
             render.refreshMapCache();
         };
     }
 
-    // Start game in playing state (or menu based on config)
+    // Start game
     if (GAME_CONFIG.autoStart) {
         stateManager.startGame();
     } else {
@@ -99,22 +96,12 @@ function canvasApp() {
 
     gameLoop.start();
 
-    // Expose level manager for debugging
+    // Expose for debugging
     if (GAME_CONFIG.debugMode) {
-        window.gameLevelManager = levelManager;
-        window.gameManager = gameManager;
-        window.gameLoop = gameLoop;
+        (window as any).gameLevelManager = levelManager;
+        (window as any).gameManager = gameManager;
+        (window as any).gameLoop = gameLoop;
     }
-
-    // console.log("Game setup complete.");
-}
-
-/**
- * Setup input handlers for state transitions
- */
-function setupStateInputHandlers(apWatcher, stateManager, levelManager) {
-    // Pause functionality is handled by APWatcher keyup
-    // Add additional state transition handlers here if needed
 }
 
 setupGame();

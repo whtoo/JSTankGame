@@ -189,6 +189,331 @@ npx playwright show-report
 npm run test:all
 ```
 
+## 三、TypeScript + Vite 迁移计划 (Phase -1)
+
+**目标：** 将项目从 Webpack + JavaScript 迁移到 Vite + TypeScript，为后续开发提供更好的类型安全和开发体验。
+
+### 迁移步骤
+
+#### -1.1 基础设施配置
+
+**任务：**
+- [ ] 安装 Vite 和 TypeScript 依赖
+- [ ] 创建 `tsconfig.json` 配置文件
+- [ ] 创建 `vite.config.ts` 配置文件
+- [ ] 更新 `package.json` 构建脚本
+- [ ] 移除 Webpack 相关配置和依赖
+
+**配置文件示例：**
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["src"]
+}
+```
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
+  server: {
+    port: 8080,
+    open: true
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  },
+  assetsInclude: ['**/*.png', '**/*.json']
+});
+```
+
+#### -1.2 核心类型定义
+
+**创建类型定义文件：**
+
+```typescript
+// src/types/index.ts
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export interface Size {
+  width: number;
+  height: number;
+}
+
+export interface Direction {
+  value: 'w' | 'a' | 's' | 'd' | 'up' | 'left' | 'down' | 'right';
+}
+
+export interface TankConfig {
+  id?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  direction: Direction['value'];
+  speed: number;
+  isPlayer?: boolean;
+}
+
+export interface BulletConfig {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  direction: Direction['value'];
+  speed: number;
+  owner: 'player' | 'enemy';
+  powerLevel: number;
+}
+
+export interface TileConfig {
+  type: number;
+  destructible: boolean;
+  health?: number;
+}
+
+export interface MapConfig {
+  cols: number;
+  rows: number;
+  tileRenderSize: number;
+  tileSourceSize: number;
+  tilesPerRowInSheet: number;
+  indexOffset: number;
+}
+
+export interface CollisionResult {
+  collision: boolean;
+  type: 'none' | 'wall' | 'tank' | 'base';
+  destructible?: boolean;
+  tileX?: number;
+  tileY?: number;
+  target?: any;
+}
+
+export interface AnimationFrame {
+  sourceDx: number;
+  sourceDy: number;
+  sourceW: number;
+  sourceH: number;
+}
+
+export interface SpriteAnimSheet {
+  getFrames(): AnimationFrame;
+}
+```
+
+#### -1.3 模块转换顺序
+
+**按依赖顺序转换模块：**
+
+1. **类型定义** (`src/types/`)
+   - [ ] `index.ts` - 核心类型定义
+
+2. **工具模块** (`src/utils/`)
+   - [ ] `ImageResource.js` → `ImageResource.ts`
+   - [ ] `Logger.js` → `Logger.ts`
+   - [ ] `KeyInputEvent.js` → `KeyInputEvent.ts`
+
+3. **配置模块** (`src/game/`)
+   - [ ] `GameConfig.js` → `GameConfig.ts`
+   - [ ] `MapConfig.js` → `MapConfig.ts`
+   - [ ] `GameState.js` → `GameState.ts`
+   - [ ] `GameLoop.js` → `GameLoop.ts`
+
+4. **关卡模块** (`src/game/levels/`)
+   - [ ] `LevelConfig.js` → `LevelConfig.ts`
+   - [ ] `LevelManager.js` → `LevelManager.ts`
+
+5. **动画模块** (`src/animation/`)
+   - [ ] `SpriteAnimation.js` → `SpriteAnimation.ts`
+   - [ ] `SpriteAnimSheet.js` → `SpriteAnimSheet.ts`
+
+6. **实体模块** (`src/entities/`)
+   - [ ] `Bullet.js` → `Bullet.ts`
+   - [ ] `Player.js` → `Player.ts`
+   - [ ] `TankPlayer.js` → `TankPlayer.ts`
+   - [ ] `EnemyTank.js` → `EnemyTank.ts`
+
+7. **输入模块** (`src/input/`)
+   - [ ] `APWatcher.js` → `APWatcher.ts`
+
+8. **系统模块** (`src/systems/`)
+   - [ ] `CollisionSystem.js` → `CollisionSystem.ts`
+
+9. **管理器模块** (`src/managers/`)
+   - [ ] `GameObjManager.js` → `GameObjManager.ts`
+
+10. **渲染模块** (`src/rendering/`)
+    - [ ] `Render.js` → `Render.ts`
+
+11. **入口文件**
+    - [ ] `main.js` → `main.ts`
+    - [ ] `extreem-engine.js` → `extreem-engine.ts`
+
+#### -1.4 测试文件转换
+
+**将测试文件转换为 TypeScript：**
+
+```bash
+# 更新 Jest 配置支持 TypeScript
+npm install --save-dev ts-jest @types/jest
+
+# 转换测试文件（示例）
+src/**/*.test.js → src/**/*.test.ts
+src/integration/*.test.js → src/integration/*.test.ts
+```
+
+**新的 Jest 配置：**
+
+```javascript
+// jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'jsdom',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest'
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  }
+};
+```
+
+#### -1.5 更新 HTML 入口
+
+**修改 `index.html` 使用 Vite 方式：**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tank Battles in TypeScript</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+```
+
+#### -1.6 迁移验收标准
+
+**完成标准：**
+- [ ] 所有 `.js` 文件已转换为 `.ts`
+- [ ] 无 TypeScript 编译错误
+- [ ] 所有测试通过
+- [ ] 开发服务器正常启动
+- [ ] 生产构建成功
+- [ ] E2E 测试通过
+
+### 迁移后的目录结构
+
+```
+src/
+├── animation/          # 动画模块
+│   ├── SpriteAnimation.ts
+│   ├── SpriteAnimSheet.ts
+│   └── *.test.ts
+├── entities/           # 实体模块
+│   ├── Bullet.ts
+│   ├── Player.ts
+│   ├── TankPlayer.ts
+│   ├── EnemyTank.ts
+│   └── *.test.ts
+├── game/               # 游戏核心
+│   ├── GameConfig.ts
+│   ├── MapConfig.ts
+│   ├── GameState.ts
+│   ├── GameLoop.ts
+│   └── levels/
+│       ├── LevelConfig.ts
+│       ├── LevelManager.ts
+│       └── levels.json
+├── input/              # 输入处理
+│   ├── APWatcher.ts
+│   └── *.test.ts
+├── managers/           # 管理器
+│   ├── GameObjManager.ts
+│   └── *.test.ts
+├── rendering/          # 渲染
+│   ├── Render.ts
+│   └── *.test.ts
+├── systems/            # 游戏系统
+│   ├── CollisionSystem.ts
+│   └── *.test.ts
+├── types/              # 类型定义 ⭐ 新增
+│   └── index.ts
+├── utils/              # 工具
+│   ├── ImageResource.ts
+│   ├── Logger.ts
+│   ├── KeyInputEvent.ts
+│   └── *.test.ts
+├── integration/        # 集成测试
+│   └── *.test.ts
+├── main.ts             # 主入口
+└── extreem-engine.ts   # Vite 入口
+```
+
+### 迁移收益
+
+| 方面 | 改进 |
+|-----|------|
+| **类型安全** | 编译时类型检查，减少运行时错误 |
+| **IDE 支持** | 更好的自动完成和重构支持 |
+| **代码质量** | 强制类型定义提高代码可维护性 |
+| **开发体验** | Vite 的极速热更新 |
+| **构建速度** | Vite 比 Webpack 快 10-100 倍 |
+| **测试体验** | TypeScript + Jest 更好的测试支持 |
+
+### 迁移时间估计
+
+- **基础设施配置**: 0.5 天
+- **类型定义**: 0.5 天
+- **模块转换**: 2-3 天
+- **测试转换**: 0.5 天
+- **调试和修复**: 1 天
+
+**总计：约 4-5 天完成迁移**
+
+---
+
 ## 三、TDD 重构计划
 
 ### 阶段 0：测试基础设施完善 (Week 1)

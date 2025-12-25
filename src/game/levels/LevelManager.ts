@@ -1,22 +1,48 @@
 /**
  * LevelManager - Manages level loading and progression
- *
- * Responsibilities:
- * - Load level data from JSON
- * - Track current level
- * - Handle level transitions
- * - Provide level data to game systems
  */
+
 import levelsData from './levels.json';
-import {
-    DEFAULT_LEVEL_CONFIG,
-    TileType,
-    EnemyType,
-    Difficulty
-} from './LevelConfig.js';
+import type { LevelConfig, Direction, EnemyType } from '../../types/index.js';
+import { DEFAULT_LEVEL_CONFIG, TileType } from './LevelConfig.js';
+
+// The imported levelsData is already parsed by Vite
+const levelsDataParsed = levelsData as { levels: LevelConfig[]; meta: any };
+
+interface LevelManagerOptions {
+    startLevel?: number;
+    loopLevels?: boolean;
+    onLevelStart?: (level: LevelConfig) => void;
+    onLevelComplete?: (data: { level: number; stars: number }) => void;
+    onGameOver?: (data: { victory: boolean; finalLevel: number }) => void;
+}
+
+interface LevelInfo {
+    id: number;
+    name: string;
+    difficulty: string;
+    enemyCount: number;
+    timeLimit: number;
+}
 
 export class LevelManager {
-    constructor(options = {}) {
+    levels: LevelConfig[];
+    meta: { totalLevels: number; version: string; basedOn: string };
+    currentLevelIndex: number;
+    currentLevel: LevelConfig | null;
+    isLevelComplete: boolean;
+    isGameOver: boolean;
+
+    // Options
+    startLevel: number;
+    loopLevels: boolean;
+
+    // Event callbacks
+    onLevelStart: ((level: LevelConfig) => void) | null;
+    onLevelComplete: ((data: { level: number; stars: number }) => void) | null;
+    onGameOver: ((data: { victory: boolean; finalLevel: number }) => void) | null;
+
+    constructor(options: LevelManagerOptions = {}) {
         this.levels = levelsData.levels;
         this.meta = levelsData.meta;
         this.currentLevelIndex = 0;
@@ -43,26 +69,22 @@ export class LevelManager {
 
     /**
      * Get total number of levels
-     * @returns {number}
      */
-    getTotalLevels() {
+    getTotalLevels(): number {
         return this.levels.length;
     }
 
     /**
      * Get current level number (1-indexed)
-     * @returns {number}
      */
-    getCurrentLevelNumber() {
+    getCurrentLevelNumber(): number {
         return this.currentLevelIndex + 1;
     }
 
     /**
      * Load a specific level
-     * @param {number} levelNum - Level number (1-indexed)
-     * @returns {object|null} Level data or null if invalid
      */
-    loadLevel(levelNum) {
+    loadLevel(levelNum: number): LevelConfig | null {
         if (levelNum < 1 || levelNum > this.levels.length) {
             console.warn(`Level ${levelNum} does not exist`);
             return null;
@@ -73,7 +95,7 @@ export class LevelManager {
         this.isLevelComplete = false;
 
         // Notify level start
-        if (this.onLevelStart) {
+        if (this.onLevelStart && this.currentLevel) {
             this.onLevelStart(this.currentLevel);
         }
 
@@ -82,9 +104,8 @@ export class LevelManager {
 
     /**
      * Load next level
-     * @returns {object|null} Next level data or null if no more levels
      */
-    loadNextLevel() {
+    loadNextLevel(): LevelConfig | null {
         const nextLevelNum = this.currentLevelIndex + 2; // +1 for 1-indexed, +1 for next
         if (nextLevelNum > this.levels.length) {
             if (this.loopLevels) {
@@ -102,27 +123,22 @@ export class LevelManager {
 
     /**
      * Get current level data
-     * @returns {object|null}
      */
-    getCurrentLevel() {
+    getCurrentLevel(): LevelConfig | null {
         return this.currentLevel;
     }
 
     /**
      * Get the map grid
-     * @returns {number[][]|null}
      */
-    getMapGrid() {
+    getMapGrid(): number[][] | null {
         return this.currentLevel ? this.currentLevel.grid : null;
     }
 
     /**
      * Get tile at position
-     * @param {number} x - Grid X
-     * @param {number} y - Grid Y
-     * @returns {number} Tile ID
      */
-    getTileAt(x, y) {
+    getTileAt(x: number, y: number): number {
         if (!this.currentLevel || !this.currentLevel.grid) return TileType.EMPTY;
         if (y < 0 || y >= this.currentLevel.grid.length) return TileType.EMPTY;
         if (x < 0 || x >= this.currentLevel.grid[y].length) return TileType.EMPTY;
@@ -131,11 +147,8 @@ export class LevelManager {
 
     /**
      * Set tile at position
-     * @param {number} x - Grid X
-     * @param {number} y - Grid Y
-     * @param {number} tileId - New tile ID
      */
-    setTileAt(x, y, tileId) {
+    setTileAt(x: number, y: number, tileId: number): void {
         if (this.currentLevel && this.currentLevel.grid) {
             if (y >= 0 && y < this.currentLevel.grid.length &&
                 x >= 0 && x < this.currentLevel.grid[y].length) {
@@ -146,88 +159,78 @@ export class LevelManager {
 
     /**
      * Get player start position
-     * @returns {object|null}
      */
-    getPlayerStart() {
+    getPlayerStart(): { x: number; y: number; direction: Direction } | null {
         return this.currentLevel ? this.currentLevel.playerStart : null;
     }
 
     /**
      * Get base position
-     * @returns {object|null}
      */
-    getBasePosition() {
+    getBasePosition(): { x: number; y: number } | null {
         return this.currentLevel ? this.currentLevel.basePosition : null;
     }
 
     /**
      * Get enemy spawn points
-     * @returns {Array|null}
      */
-    getEnemySpawnPoints() {
+    getEnemySpawnPoints(): Array<{ x: number; y: number }> | null {
         return this.currentLevel ? this.currentLevel.enemies.spawnPoints : null;
     }
 
     /**
      * Get enemy configuration
-     * @returns {object|null}
      */
-    getEnemyConfig() {
+    getEnemyConfig(): LevelConfig['enemies'] | null {
         return this.currentLevel ? this.currentLevel.enemies : null;
     }
 
     /**
      * Get total enemies for current level
-     * @returns {number}
      */
-    getTotalEnemies() {
+    getTotalEnemies(): number {
         return this.currentLevel ? this.currentLevel.enemies.total : 0;
     }
 
     /**
      * Get max enemies on field
-     * @returns {number}
      */
-    getMaxEnemiesOnField() {
+    getMaxEnemiesOnField(): number {
         return this.currentLevel ? this.currentLevel.enemies.maxOnField : 4;
     }
 
     /**
      * Get spawn interval
-     * @returns {number}
      */
-    getSpawnInterval() {
+    getSpawnInterval(): number {
         return this.currentLevel ? this.currentLevel.enemies.spawnInterval : 3.0;
     }
 
     /**
      * Get time limit
-     * @returns {number} Time limit in seconds (0 = no limit)
      */
-    getTimeLimit() {
+    getTimeLimit(): number {
         return this.currentLevel ? this.currentLevel.timeLimit : 0;
     }
 
     /**
      * Get level difficulty
-     * @returns {string}
      */
-    getDifficulty() {
-        return this.currentLevel ? this.currentLevel.difficulty : Difficulty.NORMAL;
+    getDifficulty(): string {
+        return this.currentLevel ? this.currentLevel.difficulty : 'normal';
     }
 
     /**
      * Check if base/eagle is protected
-     * @returns {boolean}
      */
-    hasFortress() {
+    hasFortress(): boolean {
         return this.currentLevel ? this.currentLevel.specialFeatures.hasFortress : true;
     }
 
     /**
      * Complete current level
      */
-    completeLevel() {
+    completeLevel(): void {
         this.isLevelComplete = true;
         if (this.onLevelComplete) {
             this.onLevelComplete({
@@ -238,29 +241,26 @@ export class LevelManager {
     }
 
     /**
-     * Calculate stars earned for current level (to be implemented with actual game data)
-     * @returns {number} 1-3 stars
+     * Calculate stars earned for current level
      */
-    calculateStars() {
+    calculateStars(): number {
         // Placeholder - should be calculated based on time, enemies killed, etc.
         return 3;
     }
 
     /**
      * Get power-up configuration
-     * @returns {Array|null}
      */
-    getPowerUpConfig() {
+    getPowerUpConfig(): LevelConfig['powerups'] | null {
         return this.currentLevel ? this.currentLevel.powerups : null;
     }
 
     /**
      * Select a random enemy type based on weights
-     * @returns {string} Enemy type
      */
-    selectRandomEnemyType() {
+    selectRandomEnemyType(): EnemyType {
         if (!this.currentLevel || !this.currentLevel.enemies.types) {
-            return EnemyType.BASIC;
+            return 'basic';
         }
 
         const types = this.currentLevel.enemies.types;
@@ -280,19 +280,24 @@ export class LevelManager {
     /**
      * Reset to first level
      */
-    reset() {
+    reset(): void {
         this.loadLevel(1);
         this.isGameOver = false;
     }
 
     /**
      * Internal method to create enriched level data
-     * @private
      */
-    _createLevelData(levelTemplate) {
+    _createLevelData(levelTemplate: LevelConfig): LevelConfig {
         return {
             ...DEFAULT_LEVEL_CONFIG,
             ...levelTemplate,
+            grid: levelTemplate.grid,
+            id: levelTemplate.id,
+            name: levelTemplate.name,
+            difficulty: levelTemplate.difficulty,
+            playerStart: levelTemplate.playerStart,
+            basePosition: levelTemplate.basePosition,
             enemies: {
                 ...DEFAULT_LEVEL_CONFIG.enemies,
                 ...levelTemplate.enemies
@@ -301,32 +306,28 @@ export class LevelManager {
                 ...DEFAULT_LEVEL_CONFIG.specialFeatures,
                 ...levelTemplate.specialFeatures
             }
-        };
+        } as LevelConfig;
     }
 
     /**
      * Get level by number
-     * @param {number} levelNum
-     * @returns {object|null}
      */
-    getLevelByNumber(levelNum) {
+    getLevelByNumber(levelNum: number): LevelConfig | null {
         if (levelNum < 1 || levelNum > this.levels.length) return null;
         return this.levels[levelNum - 1];
     }
 
     /**
      * Check if there's a next level
-     * @returns {boolean}
      */
-    hasNextLevel() {
+    hasNextLevel(): boolean {
         return this.currentLevelIndex < this.levels.length - 1;
     }
 
     /**
      * Get all level metadata
-     * @returns {Array}
      */
-    getAllLevelInfo() {
+    getAllLevelInfo(): LevelInfo[] {
         return this.levels.map(l => ({
             id: l.id,
             name: l.name,

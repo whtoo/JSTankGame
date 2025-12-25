@@ -2,12 +2,17 @@
  * FixedTimeStep - Fixed timestep accumulator for game loop
  * Ensures consistent game logic updates regardless of frame rate
  */
+
 export class FixedTimeStep {
-    /**
-     * @param {number} fixedDelta - Fixed timestep in seconds (default: 1/60)
-     * @param {number} maxDelta - Maximum delta to prevent spiral of death
-     */
-    constructor(fixedDelta = 1 / 60, maxDelta = 0.1) {
+    fixedDelta: number;
+    maxDelta: number;
+    accumulator: number;
+    currentTime: number;
+    frameCount: number;
+    totalTime: number;
+    epsilon: number;
+
+    constructor(fixedDelta: number = 1 / 60, maxDelta: number = 0.1) {
         this.fixedDelta = fixedDelta;  // Fixed timestep (e.g., 60 updates per second)
         this.maxDelta = maxDelta;      // Cap for variable delta
         this.accumulator = 0;
@@ -20,7 +25,7 @@ export class FixedTimeStep {
     /**
      * Reset the accumulator
      */
-    reset() {
+    reset(): void {
         this.accumulator = 0;
         this.frameCount = 0;
         this.totalTime = 0;
@@ -28,10 +33,8 @@ export class FixedTimeStep {
 
     /**
      * Update accumulator with current frame time
-     * @param {number} deltaTime - Time since last frame in seconds
-     * @returns {number} - The fixed timestep to use for updates
      */
-    update(deltaTime) {
+    update(deltaTime: number): number {
         // Cap delta to prevent spiral of death
         const cappedDelta = Math.min(deltaTime, this.maxDelta);
 
@@ -44,17 +47,15 @@ export class FixedTimeStep {
 
     /**
      * Check if we should perform a fixed update
-     * @returns {boolean}
      */
-    shouldUpdate() {
+    shouldUpdate(): boolean {
         return this.accumulator >= this.fixedDelta - this.epsilon;
     }
 
     /**
      * Consume fixed timesteps from accumulator
-     * @returns {number} - Number of updates to perform
      */
-    consume() {
+    consume(): number {
         let count = 0;
         const threshold = this.fixedDelta - this.epsilon;
         while (this.accumulator >= threshold) {
@@ -71,25 +72,22 @@ export class FixedTimeStep {
 
     /**
      * Get current FPS based on fixed timestep
-     * @returns {number}
      */
-    getCurrentFps() {
+    getCurrentFps(): number {
         return this.totalTime > 0 ? this.frameCount / this.totalTime : 0;
     }
 
     /**
      * Get remaining accumulator value (for interpolation)
-     * @returns {number}
      */
-    getRemaining() {
+    getRemaining(): number {
         return this.accumulator;
     }
 
     /**
      * Get alpha for interpolation (0-1)
-     * @returns {number}
      */
-    getAlpha() {
+    getAlpha(): number {
         return this.fixedDelta > 0 ? this.accumulator / this.fixedDelta : 0;
     }
 }
@@ -97,14 +95,24 @@ export class FixedTimeStep {
 /**
  * Enhanced GameLoop with fixed timestep
  */
+
+interface GameLoopOptions {
+    fixedDelta?: number;
+    maxDelta?: number;
+    interpolate?: boolean;
+}
+
 export class GameLoop {
-    /**
-     * @param {GameObjManager} gameObjManager - Game object manager
-     * @param {Render} render - Rendering engine
-     * @param {StateManager} stateManager - Game state manager (optional)
-     * @param {Object} options - Loop options
-     */
-    constructor(gameObjManager, render, stateManager = null, options = {}) {
+    gameObjManager: any; // TODO: Add proper type
+    render: any; // TODO: Add proper type
+    stateManager: any; // TODO: Add proper type
+    isRunning: boolean;
+    lastTime: number;
+    frameRequestId: number | null;
+    timeStep: FixedTimeStep;
+    interpolate: boolean;
+
+    constructor(gameObjManager: any, render: any, stateManager: any = null, options: GameLoopOptions = {}) {
         this.gameObjManager = gameObjManager;
         this.render = render;
         this.stateManager = stateManager;
@@ -129,7 +137,7 @@ export class GameLoop {
     /**
      * Starts the game loop
      */
-    start() {
+    start(): void {
         if (this.isRunning) return;
         this.isRunning = true;
         this.lastTime = performance.now();
@@ -140,7 +148,7 @@ export class GameLoop {
     /**
      * Stops the game loop
      */
-    stop() {
+    stop(): void {
         this.isRunning = false;
         if (this.frameRequestId) {
             cancelAnimationFrame(this.frameRequestId);
@@ -150,9 +158,8 @@ export class GameLoop {
 
     /**
      * Main game loop tick
-     * @param {number} currentTime - Current timestamp from requestAnimationFrame
      */
-    tick(currentTime) {
+    tick(currentTime: number): void {
         if (!this.isRunning) return;
 
         const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
@@ -191,19 +198,19 @@ export class GameLoop {
         this.frameRequestId = this._requestAnimFrame()(this.tick);
     }
 
-    _requestAnimFrame() {
+    _requestAnimFrame(): (callback: FrameRequestCallback) => number {
         return window.requestAnimationFrame ||
-            window.webkitRequestAnimationFrame ||
-            window.mozRequestAnimationFrame ||
-            window.oRequestAnimationFrame ||
-            window.msRequestAnimationFrame ||
-            ((cb) => setTimeout(cb, 1000 / 60));
+            (window as any).webkitRequestAnimationFrame ||
+            (window as any).mozRequestAnimationFrame ||
+            (window as any).oRequestAnimationFrame ||
+            (window as any).msRequestAnimationFrame ||
+            ((cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 1000 / 60));
     }
 
     /**
      * Get current FPS
      */
-    getFps() {
+    getFps(): number {
         return this.timeStep.getCurrentFps();
     }
 }

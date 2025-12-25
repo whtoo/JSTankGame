@@ -3,105 +3,100 @@
  * Handles transitions between menu, playing, paused, and game over
  */
 
+import type { GameState as IGameState } from '../types/index.js';
+
 // State definitions
 export const GameStateType = {
-    MENU: 'menu',
-    PLAYING: 'playing',
-    PAUSED: 'paused',
-    GAMEOVER: 'gameover'
+    MENU: 'menu' as const,
+    PLAYING: 'playing' as const,
+    PAUSED: 'paused' as const,
+    GAMEOVER: 'gameover' as const
 };
 
-/**
- * Base state class
- */
+export type GameStateTypeValue = typeof GameStateType[keyof typeof GameStateType];
+
+/** Base state class */
 export class GameState {
-    constructor(stateManager) {
+    stateManager: StateManager;
+    isActive: boolean = false;
+
+    constructor(stateManager: StateManager) {
         this.stateManager = stateManager;
-        this.isActive = false;
     }
 
-    enter() {
+    enter(): void {
         this.isActive = true;
     }
 
-    exit() {
+    exit(): void {
         this.isActive = false;
     }
 
-    update(deltaTime) {
+    update(_deltaTime: number): void {
         // Override in subclasses
     }
 
-    handleInput(input) {
+    handleInput(_input: unknown): void {
         // Override in subclasses
     }
 }
 
-/**
- * Menu state - shows title screen
- */
+/** Menu state - shows title screen */
 export class MenuState extends GameState {
-    enter() {
+    enter(): void {
         super.enter();
-        // TODO: Show menu UI
         console.log('Entered Menu state');
     }
 
-    update(deltaTime) {
+    update(_deltaTime: number): void {
         // Auto-start on first input
     }
 }
 
-/**
- * Playing state - main game loop
- */
+/** Playing state - main game loop */
 export class PlayingState extends GameState {
-    enter() {
+    enter(): void {
         super.enter();
         console.log('Entered Playing state');
     }
 
-    update(deltaTime) {
+    update(_deltaTime: number): void {
         // Game logic handled by GameObjManager
     }
 }
 
-/**
- * Paused state - frozen game state
- */
+/** Paused state - frozen game state */
 export class PausedState extends GameState {
-    enter() {
+    enter(): void {
         super.enter();
         console.log('Entered Paused state');
     }
 }
 
-/**
- * GameOver state - show game over screen
- */
+/** GameOver state - show game over screen */
 export class GameOverState extends GameState {
-    constructor(stateManager, score = 0) {
+    score: number = 0;
+
+    constructor(stateManager: StateManager, score: number = 0) {
         super(stateManager);
         this.score = score;
     }
 
-    enter() {
+    enter(): void {
         super.enter();
         console.log(`Entered GameOver state with score: ${this.score}`);
     }
 }
 
-/**
- * State Manager - manages game state transitions
- */
+/** State Manager - manages game state transitions */
 export class StateManager {
-    constructor() {
-        this.states = {};
-        this.currentState = null;
-        this.score = 0;
-        this.level = 1;
-        this.lives = 3;
+    private states: Record<string, { class: new (sm: StateManager, ...args: unknown[]) => GameState; instance: GameState | null }> = {};
+    currentState: GameState | null = null;
+    score: number = 0;
+    level: number = 1;
+    lives: number = 3;
 
+    constructor() {
         // Register states
         this.registerState(GameStateType.MENU, MenuState);
         this.registerState(GameStateType.PLAYING, PlayingState);
@@ -109,14 +104,14 @@ export class StateManager {
         this.registerState(GameStateType.GAMEOVER, GameOverState);
     }
 
-    registerState(type, StateClass) {
+    registerState(type: string, StateClass: new (sm: StateManager, ...args: unknown[]) => GameState): void {
         this.states[type] = {
             class: StateClass,
             instance: null
         };
     }
 
-    getState(type) {
+    getState(type: string): GameState {
         if (!this.states[type]) {
             throw new Error(`Unknown state type: ${type}`);
         }
@@ -125,10 +120,10 @@ export class StateManager {
             this.states[type].instance = new this.states[type].class(this);
         }
 
-        return this.states[type].instance;
+        return this.states[type].instance!;
     }
 
-    changeState(newStateType, ...args) {
+    changeState(newStateType: GameStateTypeValue, ...args: unknown[]): GameState {
         if (this.currentState) {
             this.currentState.exit();
         }
@@ -137,7 +132,9 @@ export class StateManager {
 
         // Pass arguments if it's GameOverState with score
         if (newStateType === GameStateType.GAMEOVER && args.length > 0) {
-            newState.score = args[0];
+            if (newState instanceof GameOverState) {
+                newState.score = args[0] as number;
+            }
         }
 
         this.currentState = newState;
@@ -146,51 +143,51 @@ export class StateManager {
         return newState;
     }
 
-    update(deltaTime) {
+    update(deltaTime: number): void {
         if (this.currentState) {
             this.currentState.update(deltaTime);
         }
     }
 
-    handleInput(input) {
+    handleInput(input: unknown): void {
         if (this.currentState) {
             this.currentState.handleInput(input);
         }
     }
 
     // Convenience methods
-    startGame() {
+    startGame(): GameState {
         this.score = 0;
         this.level = 1;
         this.lives = 3;
         return this.changeState(GameStateType.PLAYING);
     }
 
-    pause() {
+    pause(): GameState | undefined {
         if (this.currentState?.constructor.name === 'PlayingState') {
             return this.changeState(GameStateType.PAUSED);
         }
     }
 
-    resume() {
+    resume(): GameState | undefined {
         if (this.currentState?.constructor.name === 'PausedState') {
             return this.changeState(GameStateType.PLAYING);
         }
     }
 
-    gameOver(score = 0) {
+    gameOver(score: number = 0): GameState {
         return this.changeState(GameStateType.GAMEOVER, score);
     }
 
-    toMenu() {
+    toMenu(): GameState {
         return this.changeState(GameStateType.MENU);
     }
 
-    addScore(points) {
+    addScore(points: number): void {
         this.score += points;
     }
 
-    getScore() {
+    getScore(): number {
         return this.score;
     }
 }
