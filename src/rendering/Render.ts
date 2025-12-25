@@ -1,4 +1,4 @@
-import tankbrigade from '../../resources/tankbrigade.png';
+import tankbrigade from '/tankbrigade.png?url';
 import { ImageResource } from '../utils/ImageResource.js';
 import { getMapConfig } from '../game/MapConfig.js';
 import { TileType } from '../game/levels/LevelConfig.js';
@@ -12,6 +12,14 @@ import type { Direction } from '../types/index.js';
 interface RenderOptions {
     levelManager?: LevelManager | null;
     collisionSystem?: CollisionSystem | null;
+}
+
+interface Viewport {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    enabled: boolean;
 }
 
 interface TankLike {
@@ -50,6 +58,7 @@ export class Render {
     offscreenCanvas: HTMLCanvasElement;
     offscreenContext: CanvasRenderingContext2D | null;
     mapConfig: ReturnType<typeof getMapConfig>;
+    viewport: Viewport;
 
     constructor(canvasContext: CanvasRenderingContext2D, gameManagerInstance: GameObjManagerType, options: RenderOptions = {}) {
         this.context = canvasContext;
@@ -67,11 +76,88 @@ export class Render {
         // Use map config for dimensions
         this.mapConfig = getMapConfig();
 
+        // Initialize viewport (disabled by default for full-map rendering)
+        this.viewport = {
+            x: 0,
+            y: 0,
+            width: canvasContext.canvas.width || 800,
+            height: canvasContext.canvas.height || 600,
+            enabled: false
+        };
+
         // Bind renderFrame to this instance
         this.renderFrame = this.renderFrame.bind(this);
 
         // Initialize asynchronously
         this._initialize();
+    }
+
+    /**
+     * Enable viewport culling for performance
+     */
+    enableViewportCulling(enabled: boolean): void {
+        this.viewport.enabled = enabled;
+    }
+
+    /**
+     * Set viewport position
+     */
+    setViewport(x: number, y: number): void {
+        this.viewport.x = x;
+        this.viewport.y = y;
+    }
+
+    /**
+     * Update viewport size (call on canvas resize)
+     */
+    updateViewportSize(): void {
+        this.viewport.width = this.context.canvas.width;
+        this.viewport.height = this.context.canvas.height;
+    }
+
+    /**
+     * Check if an entity is within the viewport
+     */
+    private _isInViewport(x: number, y: number, width: number, height: number): boolean {
+        if (!this.viewport.enabled) return true;
+
+        // Add padding to prevent popping at edges
+        const padding = 50;
+        return (
+            x + width > this.viewport.x - padding &&
+            x < this.viewport.x + this.viewport.width + padding &&
+            y + height > this.viewport.y - padding &&
+            y < this.viewport.y + this.viewport.height + padding
+        );
+    }
+
+    /**
+     * Get visible map bounds for optimized rendering
+     */
+    private _getVisibleMapBounds(): { startX: number; endX: number; startY: number; endY: number } {
+        if (!this.viewport.enabled) {
+            const mapData = this._getMapData();
+            return {
+                startX: 0,
+                endX: mapData[0]?.length || 0,
+                startY: 0,
+                endY: mapData.length || 0
+            };
+        }
+
+        const tileRenderSize = this.mapConfig.tileRenderSize;
+        return {
+            startX: Math.max(0, Math.floor(this.viewport.x / tileRenderSize)),
+            endX: Math.min(
+                Math.ceil((this.viewport.x + this.viewport.width) / tileRenderSize) + 1,
+                26 // Max map columns
+            ),
+            startY: Math.max(0, Math.floor(this.viewport.y / tileRenderSize)),
+            endY: Math.min(
+                Math.ceil((this.viewport.y + this.viewport.height) / tileRenderSize) + 1,
+                26 // Max map rows
+            )
+        };
     }
 
     async _initialize(): Promise<void> {
@@ -236,10 +322,11 @@ export class Render {
     drawGrass(): void {
         const mapData = this._getMapData();
         const { tileRenderSize, tileSourceSize, tilesPerRowInSheet } = this.mapConfig;
+        const bounds = this._getVisibleMapBounds();
 
-        for (let rowCtr = 0; rowCtr < mapData.length; rowCtr++) {
-            for (let colCtr = 0; colCtr < mapData[rowCtr].length; colCtr++) {
-                const tileId = mapData[rowCtr][colCtr];
+        for (let rowCtr = bounds.startY; rowCtr < bounds.endY; rowCtr++) {
+            for (let colCtr = bounds.startX; colCtr < bounds.endX; colCtr++) {
+                const tileId = mapData[rowCtr]?.[colCtr];
                 if (tileId === TileType.GRASS) {
                     // TMX tile IDs are 1-indexed, convert to 0-indexed for calculation
                     const adjustedTileId = tileId - 1;
@@ -285,7 +372,7 @@ export class Render {
 
         const enemies = this.gameManager.enemies;
         for (const enemy of enemies) {
-            if (enemy.active) {
+            if (enemy.active && this._isInViewport(enemy.x, enemy.y, enemy.width, enemy.height)) {
                 this._drawTank(enemy);
             }
         }
@@ -346,7 +433,9 @@ export class Render {
         const bullets = this.gameManager.getBullets();
         if (bullets && bullets.length > 0) {
             for (const bullet of bullets) {
-                this._drawBullet(bullet);
+                if (this._isInViewport(bullet.x, bullet.y, bullet.width, bullet.height)) {
+                    this._drawBullet(bullet);
+                }
             }
         }
 
@@ -357,7 +446,9 @@ export class Render {
                     const enemyBullets = enemy.getBullets();
                     if (enemyBullets) {
                         for (const bullet of enemyBullets) {
-                            this._drawBullet(bullet);
+                            if (this._isInViewport(bullet.x, bullet.y, bullet.width, bullet.height)) {
+                                this._drawBullet(bullet);
+                            }
                         }
                     }
                 }

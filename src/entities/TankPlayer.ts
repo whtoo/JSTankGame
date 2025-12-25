@@ -4,6 +4,7 @@
 
 import { Player } from './Player.js';
 import { Bullet } from './Bullet.js';
+import { directionToAngle, getMovementVector } from '../utils/MovementUtils.js';
 import type { Direction, ISpriteAnimSheet } from '../types/index.js';
 
 export interface CommandObject {
@@ -75,22 +76,14 @@ export class TankPlayer extends Player {
     rotationAP(directionAttempt: Direction, cmd: CommandObject): void {
         if (directionAttempt !== this.direction) {
             this.direction = directionAttempt;
-            // Set arc based on the new direction
-            switch (this.direction) {
-                case 'w': case 'up': this.arc = 270; break;
-                case 's': case 'down': this.arc = 90; break;
-                case 'a': case 'left': this.arc = 180; break;
-                case 'd': case 'right': this.arc = 0; break;
-            }
+            this.arc = directionToAngle(directionAttempt);
         }
 
         if (cmd.stop === false) {
-            switch (this.direction) {
-                case 'w': case 'up': cmd.nextY = -this.per; break;
-                case 's': case 'down': cmd.nextY = this.per; break;
-                case 'a': case 'left': cmd.nextX = -this.per; break;
-                case 'd': case 'right': cmd.nextX = this.per; break;
-            }
+            const movement = getMovementVector(this.direction, this.per);
+            cmd.nextX = movement.x;
+            cmd.nextY = movement.y;
+
             if (this.animSheet && this.animSheet.orderIndex !== undefined) {
                 this.animSheet.orderIndex++;
             }

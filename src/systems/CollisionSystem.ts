@@ -3,13 +3,27 @@
  */
 
 import { TileType } from '../game/levels/LevelConfig.js';
-import type { Direction, CollisionResult } from '../types/index.js';
+import type { Direction, CollisionResult, Position, Size } from '../types/index.js';
+import type { LevelManager } from '../game/levels/LevelManager.js';
 
 interface TankBounds {
     x: number;
     y: number;
     width: number;
     height: number;
+}
+
+interface BulletBounds extends Position, Size {
+    owner: 'player' | 'enemy';
+}
+
+interface TankEntity {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    isPlayer?: boolean;
+    takeDamage?(): number;
 }
 
 interface CollisionSystemOptions {
@@ -22,21 +36,49 @@ interface CollisionSystemOptions {
 }
 
 export class CollisionSystem {
-    levelManager: any;
+    levelManager: LevelManager | null;
     tileSize: number;
     gridSize: number;
+    private gridCache: number[][] | null;
+    private cacheTimestamp: number;
 
-    constructor(levelManager: any, options: CollisionSystemOptions = {}) {
+    constructor(levelManager: LevelManager | null, options: CollisionSystemOptions = {}) {
         this.levelManager = levelManager;
         this.tileSize = options.tileSize || 33;
         this.gridSize = options.gridSize || 32;
+        this.gridCache = null;
+        this.cacheTimestamp = 0;
+    }
+
+    /**
+     * Get map grid with caching for performance
+     */
+    private _getMapGrid(): number[][] | null {
+        if (!this.levelManager) return null;
+
+        const currentTimestamp = Date.now();
+        // Cache for 100ms to avoid excessive map grid lookups
+        if (this.gridCache && currentTimestamp - this.cacheTimestamp < 100) {
+            return this.gridCache;
+        }
+
+        this.gridCache = this.levelManager.getMapGrid();
+        this.cacheTimestamp = currentTimestamp;
+        return this.gridCache;
+    }
+
+    /**
+     * Invalidate grid cache (call when map changes)
+     */
+    invalidateCache(): void {
+        this.gridCache = null;
     }
 
     /**
      * Check if a tank collides with any walls
      */
     checkTankCollision(tank: TankBounds, direction: Direction, speed: number): CollisionResult {
-        const grid = this.levelManager.getMapGrid();
+        const grid = this._getMapGrid();
         if (!grid) return { collision: false, type: 'none' };
 
         let newX = tank.x;
@@ -77,7 +119,7 @@ export class CollisionSystem {
             return false;
         }
 
-        const grid = this.levelManager.getMapGrid();
+        const grid = this._getMapGrid();
         if (!grid || y < 0 || y >= grid.length || x < 0 || x >= grid[0].length) {
             return false;
         }
@@ -91,7 +133,7 @@ export class CollisionSystem {
      * Check if tile is destructible
      */
     isDestructibleTile(x: number, y: number): boolean {
-        const grid = this.levelManager.getMapGrid();
+        const grid = this._getMapGrid();
         if (!grid || y < 0 || y >= grid.length || x < 0 || x >= grid[0].length) {
             return false;
         }
@@ -101,7 +143,7 @@ export class CollisionSystem {
     /**
      * Check bullet collision with walls and tanks
      */
-    checkBulletCollision(bullet: any, tanks: any[], isPlayerBullet: boolean): CollisionResult {
+    checkBulletCollision(bullet: BulletBounds, tanks: TankEntity[], isPlayerBullet: boolean): CollisionResult {
         const tileX = Math.floor(bullet.x / this.tileSize);
         const tileY = Math.floor(bullet.y / this.tileSize);
 
@@ -149,10 +191,11 @@ export class CollisionSystem {
      * Destroy a tile (for destructible walls)
      */
     destroyTile(x: number, y: number): boolean {
-        const grid = this.levelManager.getMapGrid();
+        const grid = this._getMapGrid();
         if (grid && y >= 0 && y < grid.length && x >= 0 && x < grid[0].length) {
             if (this.isDestructibleTile(x, y)) {
                 grid[y][x] = TileType.EMPTY;
+                this.invalidateCache(); // Invalidate cache after modification
                 return true;
             }
         }

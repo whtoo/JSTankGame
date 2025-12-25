@@ -3,6 +3,7 @@ import { EnemyTank } from '../entities/EnemyTank.js';
 import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
 import { getMapConfig } from '../game/MapConfig.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
+import { BulletPool } from '../pooling/ObjectPool.js';
 import type { LevelManager } from '../game/levels/LevelManager.js';
 import type { CollisionSystem as CollisionSystemType } from '../systems/CollisionSystem.js';
 import type { Bullet } from '../entities/Bullet.js';
@@ -52,6 +53,7 @@ export class GameObjManager {
     spawnInterval: number;
     mapConfig: ReturnType<typeof getMapConfig>;
     score?: number;
+    private bulletPool: BulletPool;
 
     // Optional callbacks
     onEnemyDestroyed?: (enemy: EnemyTank, points: number) => void;
@@ -61,6 +63,9 @@ export class GameObjManager {
         this.levelManager = options.levelManager || null;
         this.collisionSystem = options.collisionSystem ||
             new CollisionSystem(this.levelManager, { tileSize: 33 });
+
+        // Initialize bullet pool (20 pre-allocated bullets, max 100)
+        this.bulletPool = new BulletPool(20, 100);
 
         // Create player tank
         const playerStart = this.levelManager ? this.levelManager.getPlayerStart() : null;
@@ -386,13 +391,16 @@ export class GameObjManager {
     }
 
     /**
-     * Remove a bullet from tracking
+     * Remove a bullet from tracking and release back to pool
      */
     _removeBullet(bullet: Bullet): void {
         const index = this.bullets.indexOf(bullet);
         if (index !== -1) {
             this.bullets.splice(index, 1);
         }
+
+        // Release bullet back to pool
+        this.bulletPool.release(bullet);
 
         // Also remove from player's tracking
         const player = this.gameObjects[0];
@@ -409,12 +417,34 @@ export class GameObjManager {
     }
 
     /**
-     * Adds a bullet to the game.
+     * Adds a bullet to the game using the object pool.
+     * @deprecated Use acquireBullet instead for better performance
      */
     addBullet(bullet: Bullet): void {
         if (bullet && bullet.active) {
             this.bullets.push(bullet);
         }
+    }
+
+    /**
+     * Acquire a bullet from the object pool.
+     * @param x Bullet X position
+     * @param y Bullet Y position
+     * @param direction Bullet direction
+     * @param owner Bullet owner ('player' or 'enemy')
+     * @param powerLevel Bullet power level (0-3)
+     * @returns A bullet from the pool
+     */
+    acquireBullet(
+        x: number,
+        y: number,
+        direction: Direction,
+        owner: 'player' | 'enemy',
+        powerLevel: number = 0
+    ): Bullet {
+        const bullet = this.bulletPool.acquireBullet(x, y, direction, owner, powerLevel);
+        this.bullets.push(bullet);
+        return bullet;
     }
 
     /**
@@ -452,5 +482,40 @@ export class GameObjManager {
      */
     addScore(points: number): void {
         this.score = (this.score || 0) + points;
+    }
+
+    /**
+     * Clean up resources
+     * Call this when the game is being destroyed or unloaded
+     */
+    destroy(): void {
+        // Clear all arrays
+        this.bullets = [];
+        this.enemies = [];
+        this.gameObjects = [];
+
+        // Clear bullet pool
+        this.bulletPool.clear();
+
+        // Reset counters
+        this.enemiesRemaining = 0;
+        this.enemiesOnField = 0;
+        this.spawnTimer = 0;
+
+        // Clear callbacks
+        this.onEnemyDestroyed = undefined;
+        this.onBaseDestroyed = undefined;
+
+        // Clear collision system cache if available
+        if (this.collisionSystem && typeof this.collisionSystem.invalidateCache === 'function') {
+            this.collisionSystem.invalidateCache();
+        }
+    }
+
+    /**
+     * Get bullet pool statistics for debugging
+     */
+    getBulletPoolStats() {
+        return this.bulletPool.getStats();
     }
 }

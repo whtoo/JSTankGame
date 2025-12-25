@@ -4,6 +4,16 @@
 
 import { Bullet } from './Bullet.js';
 import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import {
+    directionToAngle,
+    angleToDirection,
+    getOppositeDirection,
+    getValidTurnDirections,
+    getRandomValidDirection,
+    getMovementVector,
+    distance,
+    getDirectionToward
+} from '../utils/MovementUtils.js';
 import type { Direction, EnemyType, ISpriteAnimSheet } from '../types/index.js';
 
 interface EnemyTankOptions {
@@ -116,7 +126,7 @@ export class EnemyTank {
 
         this.width = config.width || 32;
         this.height = config.height || 32;
-        this.arc = this.directionToArc(this.direction);
+        this.arc = directionToAngle(this.direction);
         this.color = config.color || '#ff0000';
 
         this.active = true;
@@ -135,20 +145,6 @@ export class EnemyTank {
 
         this.targetPosition = null;
         this.state = 'patrol';
-    }
-
-    directionToArc(dir: Direction): number {
-        const angles: Record<Direction, number> = { w: 0, s: 180, a: 270, d: 90 };
-        return angles[dir] || 0;
-    }
-
-    arcToDirection(arc: number): Direction {
-        const normalized = ((arc % 360) + 360) % 360;
-
-        if (normalized >= 315 || normalized < 45) return 'w';
-        if (normalized >= 45 && normalized < 135) return 'd';
-        if (normalized >= 135 && normalized < 225) return 's';
-        return 'a';
     }
 
     update(deltaTime: number, gameState: GameState): void {
@@ -188,23 +184,16 @@ export class EnemyTank {
     }
 
     changeRandomDirection(): void {
-        const directions: Direction[] = ['w', 's', 'a', 'd'];
-        const opposites: Record<Direction, Direction> = { w: 's', s: 'w', a: 'd', d: 'a' };
-        const validDirs = directions.filter(d => d !== opposites[this.direction]);
-
-        this.direction = validDirs[Math.floor(Math.random() * validDirs.length)];
-        this.arc = this.directionToArc(this.direction);
+        this.direction = getRandomValidDirection(this.direction);
+        this.arc = directionToAngle(this.direction);
     }
 
     move(deltaTime: number): void {
         const moveAmount = this.speed * deltaTime * 60;
+        const movement = getMovementVector(this.direction, moveAmount);
 
-        switch (this.direction) {
-            case 'w': this.y -= moveAmount; break;
-            case 's': this.y += moveAmount; break;
-            case 'a': this.x -= moveAmount; break;
-            case 'd': this.x += moveAmount; break;
-        }
+        this.x += movement.x;
+        this.y += movement.y;
 
         if (this.animSheet) {
             this.animSheet.getFrames();
@@ -214,25 +203,16 @@ export class EnemyTank {
     shouldFire(gameState: GameState): boolean {
         if (!gameState.player || !gameState.player.active) return false;
 
-        const dx = gameState.player.x - this.x;
-        const dy = gameState.player.y - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const dist = distance(this.x, this.y, gameState.player.x, gameState.player.y);
 
-        if (distance > 400) return false;
+        if (dist > 400) return false;
 
-        const aimDir = this.getAimDirection(gameState.player);
+        const aimDir = getDirectionToward(this.x, this.y, gameState.player.x, gameState.player.y);
         return this.direction === aimDir || Math.random() < 0.1;
     }
 
     getAimDirection(player: { x: number; y: number }): Direction {
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-
-        if (Math.abs(dy) > Math.abs(dx)) {
-            return dy < 0 ? 'w' : 's';
-        } else {
-            return dx < 0 ? 'a' : 'd';
-        }
+        return getDirectionToward(this.x, this.y, player.x, player.y);
     }
 
     fire(): Bullet | null {

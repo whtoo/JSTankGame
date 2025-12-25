@@ -12,10 +12,17 @@ export interface GameObjManagerInterface {
 export class APWatcher {
     gm: GameObjManagerInterface;
     body: HTMLElement | null;
+    private keyUpHandler: ((e: KeyboardEvent) => void) | null;
+    private keyDownHandler: ((e: KeyboardEvent) => void) | null;
+    private isDestroyed: boolean;
 
     constructor(gameManagerInstance: GameObjManagerInterface) {
         this.gm = gameManagerInstance;
         this.body = document.querySelector('body');
+        this.keyUpHandler = null;
+        this.keyDownHandler = null;
+        this.isDestroyed = false;
+
         if (!this.body) {
             console.error("APWatcher: document.body not found at construction time.");
             return;
@@ -24,8 +31,40 @@ export class APWatcher {
     }
 
     private _setupListeners(): void {
-        this.body.onkeyup = (e: KeyboardEvent) => this.keyWatcherUp(e);
-        this.body.onkeypress = (e: KeyboardEvent) => this.keyWatchDown(e);
+        // Store handler references for proper cleanup
+        this.keyUpHandler = (e: KeyboardEvent) => this.keyWatcherUp(e);
+        this.keyDownHandler = (e: KeyboardEvent) => this.keyWatchDown(e);
+
+        this.body?.addEventListener('keyup', this.keyUpHandler);
+        this.body?.addEventListener('keypress', this.keyDownHandler);
+    }
+
+    /**
+     * Clean up event listeners to prevent memory leaks
+     * Call this when the game is being destroyed or unloaded
+     */
+    destroy(): void {
+        if (this.isDestroyed) return;
+
+        if (this.body && this.keyUpHandler) {
+            this.body.removeEventListener('keyup', this.keyUpHandler);
+        }
+        if (this.body && this.keyDownHandler) {
+            this.body.removeEventListener('keypress', this.keyDownHandler);
+        }
+
+        this.keyUpHandler = null;
+        this.keyDownHandler = null;
+        this.body = null;
+        this.gm = null as unknown as GameObjManagerInterface;
+        this.isDestroyed = true;
+    }
+
+    /**
+     * Check if the watcher has been destroyed
+     */
+    isDestroyedWatcher(): boolean {
+        return this.isDestroyed;
     }
 
     keyWatchDown(e: KeyboardEvent): void {
@@ -41,28 +80,39 @@ export class APWatcher {
         cmd.nextX = 0;
         cmd.nextY = 0;
 
-        switch (e.which) {
-            case 119: // w - Move Up
+        // Use e.key for modern keyboard event handling
+        // Supports both WASD and arrow keys
+        switch (e.key) {
+            case 'w':
+            case 'W':
+            case 'ArrowUp':
                 if (player.destY > 0) {
                     player.rotationAP('w', cmd);
                 }
                 break;
-            case 115: // s - Move Down
+            case 's':
+            case 'S':
+            case 'ArrowDown':
                 if (player.destY < 13) {
                     player.rotationAP('s', cmd);
                 }
                 break;
-            case 97: // a - Move Left
+            case 'a':
+            case 'A':
+            case 'ArrowLeft':
                 if (player.destX > 0) {
                     player.rotationAP('a', cmd);
                 }
                 break;
-            case 100: // d - Move Right
+            case 'd':
+            case 'D':
+            case 'ArrowRight':
                 if (player.destX < 24) {
                     player.rotationAP('d', cmd);
                 }
                 break;
-            case 32: // Spacebar - Fire
+            case ' ':
+            case 'Spacebar':
                 cmd.fire = true;
                 break;
             default:
