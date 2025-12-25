@@ -40,14 +40,14 @@ export const CANVAS_CONFIG = {
 export const TILE_CONFIG = {
     renderSize: 33,
     sourceSize: 32,
-    tilesPerRow: 24
+    tilesPerRow: 25  // 800px / 32px = 25 tiles per row
 };
 
 // Game settings
 export const GAME_CONFIG = {
     autoStart: true,
     showFps: true,
-    debugMode: false
+    debugMode: true  // Enable for debugging
 };
 
 // Input configuration

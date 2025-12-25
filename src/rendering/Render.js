@@ -75,7 +75,7 @@ export class Render {
 
         const mapData = this._getMapData();
 
-        this.offscreenContext.fillStyle = "#aaaaaa";
+        this.offscreenContext.fillStyle = "#000000";
         const mapRows = mapData.length;
         const mapCols = mapData[0].length;
         const { tileRenderSize, tileSourceSize, tilesPerRowInSheet, indexOffset } = this.mapConfig;
@@ -88,9 +88,14 @@ export class Render {
 
         for (let rowCtr = 0; rowCtr < mapRows; rowCtr++) {
             for (let colCtr = 0; colCtr < mapCols; colCtr++) {
-                const tileId = mapData[rowCtr][colCtr] + indexOffset;
-                const sourceX = (tileId % tilesPerRowInSheet) * tileRenderSize;
-                const sourceY = Math.floor(tileId / tilesPerRowInSheet) * tileRenderSize;
+                // The map data uses 1-based tile IDs from TMX (firstgid=1), so we don't need indexOffset
+                // TMX tile IDs are already 1-indexed and correctly point to spritesheet positions
+                const tileId = mapData[rowCtr][colCtr];
+                // For TMX compatibility, tile IDs are 1-indexed, convert to 0-indexed for calculation
+                const adjustedTileId = tileId - 1;
+                // Use tileSourceSize (32) for source coordinates
+                const sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
+                const sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
 
                 this.offscreenContext.drawImage(
                     this.tileSheet,
@@ -130,6 +135,8 @@ export class Render {
 
     /**
      * Draw the base/eagle (briefcase)
+     * Note: The base is already rendered in the offscreen cache via the grid,
+     * so this method can be used for additional effects or to override the cached version.
      */
     drawBase() {
         if (!this.levelManager) return;
@@ -137,22 +144,24 @@ export class Render {
         const basePos = this.levelManager.getBasePosition();
         if (!basePos) return;
 
-        const tileSize = this.mapConfig.tileRenderSize;
-        const x = basePos.x * tileSize;
-        const y = basePos.y * tileSize;
+        const tileRenderSize = this.mapConfig.tileRenderSize;
+        const tileSourceSize = this.mapConfig.tileSourceSize;
+        const x = basePos.x * tileRenderSize;
+        const y = basePos.y * tileRenderSize;
 
         // Draw eagle/briefcase sprite
-        // Eagle is typically at sprite index 102 in the tilesheet
-        const eagleTileId = 102 + this.mapConfig.indexOffset;
-        const sourceX = (eagleTileId % this.mapConfig.tilesPerRowInSheet) * tileSize;
-        const sourceY = Math.floor(eagleTileId / this.mapConfig.tilesPerRowInSheet) * tileSize;
+        // Eagle is at TMX tile ID 102 (1-indexed), convert to 0-indexed for calculation
+        const adjustedTileId = 102 - 1;
+        // Use tileSourceSize (32) for source coordinates
+        const sourceX = (adjustedTileId % this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
+        const sourceY = Math.floor(adjustedTileId / this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
 
         this.context.drawImage(
             this.tileSheet,
             sourceX, sourceY,
-            this.mapConfig.tileSourceSize, this.mapConfig.tileSourceSize,
+            tileSourceSize, tileSourceSize,
             x, y,
-            tileSize, tileSize
+            tileRenderSize, tileRenderSize
         );
 
         // Also draw a protective structure around base
@@ -183,18 +192,22 @@ export class Render {
 
     /**
      * Draw grass tiles (which hide tanks)
+     * Note: Grass is already in the offscreen cache, but we redraw it on top
+     * to hide tanks that pass underneath (like the original Battle City)
      */
     drawGrass() {
         const mapData = this._getMapData();
-        const { tileRenderSize, tileSourceSize, tilesPerRowInSheet, indexOffset } = this.mapConfig;
+        const { tileRenderSize, tileSourceSize, tilesPerRowInSheet } = this.mapConfig;
 
         for (let rowCtr = 0; rowCtr < mapData.length; rowCtr++) {
             for (let colCtr = 0; colCtr < mapData[rowCtr].length; colCtr++) {
                 const tileId = mapData[rowCtr][colCtr];
                 if (tileId === TileType.GRASS) {
-                    const sourceTileId = tileId + indexOffset;
-                    const sourceX = (sourceTileId % tilesPerRowInSheet) * tileRenderSize;
-                    const sourceY = Math.floor(sourceTileId / tilesPerRowInSheet) * tileRenderSize;
+                    // TMX tile IDs are 1-indexed, convert to 0-indexed for calculation
+                    const adjustedTileId = tileId - 1;
+                    // Use tileSourceSize (32) for source coordinates
+                    const sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
+                    const sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
 
                     this.context.drawImage(
                         this.tileSheet,
@@ -242,18 +255,25 @@ export class Render {
 
     /**
      * Draw a tank (player or enemy)
-     * @param {object} tank - Tank object with x, y, arc, etc.
+     * @param {object} tank - Tank object with position properties and arc
      */
     _drawTank(tank) {
         const angleInRadians = tank.arc / 180 * Math.PI;
 
+        // Handle different tank types: TankPlayer uses centerX/centerY/destW/destH,
+        // EnemyTank uses x/y/width/height
+        const posX = tank.centerX || tank.x;
+        const posY = tank.centerY || tank.y;
+        const tankW = tank.destW || tank.width;
+        const tankH = tank.destH || tank.height;
+
         if (!tank.animSheet) {
             // Fallback: draw simple tank
             this.context.save();
-            this.context.translate(tank.x, tank.y);
+            this.context.translate(posX, posY);
             this.context.rotate(angleInRadians);
-            this.context.fillStyle = tank.isPlayer ? '#00ff00' : (tank.color || '#ff0000');
-            this.context.fillRect(-tank.width / 2, -tank.height / 2, tank.width, tank.height);
+            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FFFFFF');
+            this.context.fillRect(-tankW / 2, -tankH / 2, tankW, tankH);
             this.context.restore();
             return;
         }
@@ -262,23 +282,23 @@ export class Render {
         if (!animFrame) {
             // Fallback: draw simple tank
             this.context.save();
-            this.context.translate(tank.x, tank.y);
+            this.context.translate(posX, posY);
             this.context.rotate(angleInRadians);
-            this.context.fillStyle = tank.isPlayer ? '#00ff00' : (tank.color || '#ff0000');
-            this.context.fillRect(-tank.width / 2, -tank.height / 2, tank.width, tank.height);
+            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FFFFFF');
+            this.context.fillRect(-tankW / 2, -tankH / 2, tankW, tankH);
             this.context.restore();
             return;
         }
 
         this.context.save();
-        this.context.translate(tank.x, tank.y);
+        this.context.translate(posX, posY);
         this.context.rotate(angleInRadians);
         this.context.drawImage(
             this.tileSheet,
             animFrame.sourceDx, animFrame.sourceDy,
             animFrame.sourceW, animFrame.sourceH,
-            -tank.width / 2, -tank.height / 2,
-            tank.width, tank.height
+            -tankW / 2, -tankH / 2,
+            tankW, tankH
         );
         this.context.restore();
     }
@@ -313,7 +333,8 @@ export class Render {
      */
     _drawBullet(bullet) {
         this.context.save();
-        this.context.fillStyle = bullet.owner === 'player' ? '#ffff00' : '#ff8800';
+        // NES Battle City style: white bullets
+        this.context.fillStyle = '#FFFFFF';
         this.context.fillRect(
             bullet.x - bullet.width / 2,
             bullet.y - bullet.height / 2,
@@ -329,21 +350,33 @@ export class Render {
         const fps = delta > 0 ? 1000 / delta : 60;
         this.lastTime = now;
 
-        this.context.fillStyle = 'cornflowerblue';
+        this.context.fillStyle = '#FFFFFF';
         this.context.fillText(`${Math.round(fps)} fps`, 20, 60);
     }
 
     _drawLevelInfo() {
         if (!this.levelManager) return;
 
-        this.context.fillStyle = 'white';
-        this.context.font = '14px monospace';
-        this.context.fillText(`Level: ${this.levelManager.getCurrentLevelNumber()}`, 20, 20);
+        this.context.fillStyle = '#FFFFFF';
+        this.context.font = 'bold 16px monospace';
 
+        // NES Battle City style: 1P at top left
+        this.context.fillText('1P', 20, 24);
+
+        // Enemy count display (like original game)
         const enemyConfig = this.levelManager.getEnemyConfig();
         if (enemyConfig && this.gameManager.enemies) {
             const remaining = enemyConfig.total - this.gameManager.enemies.filter(e => e.active).length;
-            this.context.fillText(`Enemies: ${remaining}`, 20, 40);
+            // Draw enemy icons (simplified as X marks)
+            this.context.font = '14px monospace';
+            this.context.fillText(`×${remaining}`, 60, 24);
         }
+
+        // Level indicator at top right
+        const level = this.levelManager.getCurrentLevelNumber();
+        this.context.font = 'bold 14px monospace';
+        this.context.textAlign = 'right';
+        this.context.fillText(`STAGE ${level}`, 780, 24);
+        this.context.textAlign = 'left';
     }
 }

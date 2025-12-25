@@ -43,10 +43,11 @@ export class EnemyTank {
         this.isMoving = false;
 
         // Animation
+        // Enemy tank sprites: row 1, columns 0-7 (same layout as player but different row)
         if (options.animSheet) {
             this.animSheet = options.animSheet;
         } else {
-            this.animSheet = new SpriteAnimSheet(3, 9, 16);
+            this.animSheet = new SpriteAnimSheet(0, 7, 1);
         }
 
         // Bullets
@@ -61,6 +62,7 @@ export class EnemyTank {
 
     /**
      * Enemy type configurations
+     * Colors follow NES Battle City style
      */
     static CONFIGS = {
         basic: {
@@ -70,7 +72,7 @@ export class EnemyTank {
             points: 100,
             width: 30,
             height: 30,
-            color: '#ff4444'
+            color: '#FFFFFF'  // White - basic enemy
         },
         fast: {
             speed: 4,
@@ -79,7 +81,7 @@ export class EnemyTank {
             points: 200,
             width: 26,
             height: 26,
-            color: '#ff8800'
+            color: '#FFD700'  // Gold - fast enemy
         },
         power: {
             speed: 1,
@@ -88,7 +90,7 @@ export class EnemyTank {
             points: 300,
             width: 34,
             height: 34,
-            color: '#8800ff'
+            color: '#87CEEB'  // Light blue - power enemy
         },
         armor: {
             speed: 1.5,
@@ -97,7 +99,7 @@ export class EnemyTank {
             points: 400,
             width: 38,
             height: 38,
-            color: '#444444'
+            color: '#FF6B6B'  // Light red - armored enemy
         }
     };
 

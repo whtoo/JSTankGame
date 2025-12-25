@@ -26,8 +26,8 @@ export const MAP_CONFIG = {
     rows: 13,
     tileRenderSize: 33,  // Visual size on canvas
     tileSourceSize: 32,  // Size in spritesheet
-    tilesPerRowInSheet: 24,
-    indexOffset: -1,     // TMX related offset
+    tilesPerRowInSheet: 25,  // 800px / 32px = 25 tiles per row
+    indexOffset: 0,      // TMX uses 1-indexed IDs, so no offset needed when we subtract 1
 
     // Computed pixel dimensions
     get width() { return this.cols * this.tileRenderSize; },

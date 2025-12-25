@@ -25,7 +25,8 @@ export class GameObjManager {
         player.x = startX;
         player.y = startY;
         player.updateSelfCoor();
-        player.animSheet = new SpriteAnimSheet(3, 9, 16);
+        // Player tank sprites: row 0, columns 0-7 (4 directions × 2 frames for animation)
+        player.animSheet = new SpriteAnimSheet(0, 7, 0);
 
         this.gameObjects = [player];
 
@@ -88,10 +89,15 @@ export class GameObjManager {
         // Select random enemy type
         const type = this.levelManager.selectRandomEnemyType();
 
+        // Convert grid coordinates to pixel coordinates (center of tile)
+        const tileSize = this.mapConfig.tileRenderSize;
+        const pixelX = spawnPoint.x * tileSize + tileSize / 2;
+        const pixelY = spawnPoint.y * tileSize + tileSize / 2;
+
         const enemy = new EnemyTank({
             type,
-            x: spawnPoint.x,
-            y: spawnPoint.y,
+            x: pixelX,
+            y: pixelY,
             direction: 's' // Enemies spawn facing down
         });
 
@@ -176,11 +182,23 @@ export class GameObjManager {
             if (cmd.nextY !== 0) newDestY += cmd.nextY;
             if (cmd.nextX !== 0) newDestX += cmd.nextX;
 
+            // Calculate new pixel position
+            const newX = newDestX * this.mapConfig.tileRenderSize;
+            const newY = newDestY * this.mapConfig.tileRenderSize;
+
+            // Determine movement direction
+            let moveDir = null;
+            if (cmd.nextX !== 0) moveDir = cmd.nextX > 0 ? 'd' : 'a';
+            else if (cmd.nextY !== 0) moveDir = cmd.nextY > 0 ? 's' : 'w';
+
+            // Calculate movement distance in pixels
+            const moveDist = Math.max(Math.abs(cmd.nextX), Math.abs(cmd.nextY)) * this.mapConfig.tileRenderSize;
+
             // Check collision with walls
             const collision = this.collisionSystem.checkTankCollision(
-                { x: player.x, y: player.y, width: 30, height: 30 },
-                cmd.nextX !== 0 ? (cmd.nextX > 0 ? 'd' : 'a') : (cmd.nextY > 0 ? 's' : 'w'),
-                Math.max(Math.abs(cmd.nextX), Math.abs(cmd.nextY)) * this.mapConfig.tileRenderSize
+                { x: newX, y: newY, width: 30, height: 30 },
+                moveDir,
+                moveDist
             );
 
             if (!collision.collision) {
@@ -227,7 +245,26 @@ export class GameObjManager {
                 continue;
             }
 
+            // Store old position for collision rollback
+            const oldX = enemy.x;
+            const oldY = enemy.y;
+
             enemy.update(deltaTime, gameState);
+
+            // Check collision with walls after enemy moves
+            const collision = this.collisionSystem.checkTankCollision(
+                { x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height },
+                enemy.direction,
+                enemy.speed * deltaTime * 60
+            );
+
+            if (collision.collision) {
+                // Revert position if collision detected
+                enemy.x = oldX;
+                enemy.y = oldY;
+                // Change direction when hitting wall
+                enemy.changeRandomDirection();
+            }
 
             // Add enemy bullets to game bullets
             if (enemy.activeBullets) {
