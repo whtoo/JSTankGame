@@ -2,16 +2,56 @@ import tankbrigade from '../../resources/tankbrigade.png';
 import { ImageResource } from '../utils/ImageResource.js';
 import { getMapConfig } from '../game/MapConfig.js';
 import { TileType } from '../game/levels/LevelConfig.js';
+import type { GameObjManager as GameObjManagerType } from '../managers/GameObjManager.js';
+import type { LevelManager } from '../game/levels/LevelManager.js';
+import type { CollisionSystem } from '../systems/CollisionSystem.js';
+import type { ISpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import type { AnimationFrame } from '../types/index.js';
+import type { Direction } from '../types/index.js';
 
+interface RenderOptions {
+    levelManager?: LevelManager | null;
+    collisionSystem?: CollisionSystem | null;
+}
+
+interface TankLike {
+    x: number;
+    y: number;
+    centerX?: number;
+    centerY?: number;
+    width: number;
+    height: number;
+    destW?: number;
+    destH?: number;
+    arc: number;
+    animSheet?: ISpriteAnimSheet | null;
+    isPlayer?: boolean;
+    color?: string;
+    active?: boolean;
+}
+
+interface BulletLike {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/**
+ * Render - Handles all game rendering to canvas
+ */
 export class Render {
-    /**
-     * @param {CanvasRenderingContext2D} canvasContext - The canvas 2D context
-     * @param {GameObjManager} gameManager - Reference to game object manager
-     * @param {object} options - Configuration options
-     * @param {LevelManager} options.levelManager - Level manager instance (optional)
-     * @param {CollisionSystem} options.collisionSystem - Collision system instance
-     */
-    constructor(canvasContext, gameManagerInstance, options = {}) {
+    context: CanvasRenderingContext2D;
+    gameManager: GameObjManagerType;
+    levelManager: LevelManager | null;
+    collisionSystem: CollisionSystem | null;
+    tileSheet: HTMLImageElement | null;
+    lastTime: number;
+    offscreenCanvas: HTMLCanvasElement;
+    offscreenContext: CanvasRenderingContext2D | null;
+    mapConfig: ReturnType<typeof getMapConfig>;
+
+    constructor(canvasContext: CanvasRenderingContext2D, gameManagerInstance: GameObjManagerType, options: RenderOptions = {}) {
         this.context = canvasContext;
         this.gameManager = gameManagerInstance;
         this.levelManager = options.levelManager || null;
@@ -34,7 +74,7 @@ export class Render {
         this._initialize();
     }
 
-    async _initialize() {
+    async _initialize(): Promise<void> {
         try {
             const imageLoader = new ImageResource(tankbrigade);
             this.tileSheet = await imageLoader.load();
@@ -46,29 +86,28 @@ export class Render {
 
     /**
      * Get current map data (from level manager or default)
-     * @returns {number[][]} 2D array of tile IDs
      */
-    _getMapData() {
+    _getMapData(): number[][] {
         if (this.levelManager) {
             const grid = this.levelManager.getMapGrid();
             if (grid) return grid;
         }
         // Fallback to default map
-        const { mapData: defaultMapData } = require('../game/MapConfig.js');
+        const { mapData: defaultMapData } = getMapConfig();
         return defaultMapData;
     }
 
     /**
      * Recache the offscreen canvas when level changes
      */
-    refreshMapCache() {
+    refreshMapCache(): void {
         if (this.tileSheet) {
             this._offscreenCache();
         }
     }
 
-    _offscreenCache() {
-        if (!this.tileSheet) {
+    _offscreenCache(): void {
+        if (!this.tileSheet || !this.offscreenContext) {
             console.error("Tilesheet not loaded, cannot cache offscreen map.");
             return;
         }
@@ -78,7 +117,7 @@ export class Render {
         this.offscreenContext.fillStyle = "#000000";
         const mapRows = mapData.length;
         const mapCols = mapData[0].length;
-        const { tileRenderSize, tileSourceSize, tilesPerRowInSheet, indexOffset } = this.mapConfig;
+        const { tileRenderSize, tileSourceSize, tilesPerRowInSheet } = this.mapConfig;
 
         // Resize canvas to fit map
         this.offscreenCanvas.width = mapCols * tileRenderSize;
@@ -110,9 +149,8 @@ export class Render {
 
     /**
      * Renders a single frame - called by GameLoop
-     * @param {number} alpha - Interpolation alpha (0-1), defaults to 1
      */
-    renderFrame(alpha = 1) {
+    renderFrame(alpha = 1): void {
         if (!this.tileSheet || !this.context || !this.gameManager) {
             return;
         }
@@ -138,7 +176,7 @@ export class Render {
      * Note: The base is already rendered in the offscreen cache via the grid,
      * so this method can be used for additional effects or to override the cached version.
      */
-    drawBase() {
+    drawBase(): void {
         if (!this.levelManager) return;
 
         const basePos = this.levelManager.getBasePosition();
@@ -171,7 +209,7 @@ export class Render {
     /**
      * Draw protective walls around base
      */
-    _drawBaseProtection(centerX, centerY) {
+    _drawBaseProtection(centerX: number, centerY: number): void {
         const tileSize = this.mapConfig.tileRenderSize;
 
         // Draw brick walls around the base (like in original Battle City)
@@ -195,7 +233,7 @@ export class Render {
      * Note: Grass is already in the offscreen cache, but we redraw it on top
      * to hide tanks that pass underneath (like the original Battle City)
      */
-    drawGrass() {
+    drawGrass(): void {
         const mapData = this._getMapData();
         const { tileRenderSize, tileSourceSize, tilesPerRowInSheet } = this.mapConfig;
 
@@ -210,7 +248,7 @@ export class Render {
                     const sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
 
                     this.context.drawImage(
-                        this.tileSheet,
+                        this.tileSheet as HTMLImageElement,
                         sourceX, sourceY,
                         tileSourceSize, tileSourceSize,
                         colCtr * tileRenderSize, rowCtr * tileRenderSize,
@@ -224,12 +262,12 @@ export class Render {
     /**
      * Draw the main map (from offscreen canvas)
      */
-    drawMap() {
+    drawMap(): void {
         this.context.drawImage(this.offscreenCanvas, 0, 0,
             this.offscreenCanvas.width, this.offscreenCanvas.height);
     }
 
-    drawPlayer() {
+    drawPlayer(): void {
         const players = this.gameManager.gameObjects;
         if (!players || players.length === 0) return;
 
@@ -242,7 +280,7 @@ export class Render {
     /**
      * Draw enemy tanks
      */
-    drawEnemies() {
+    drawEnemies(): void {
         if (!this.gameManager.enemies) return;
 
         const enemies = this.gameManager.enemies;
@@ -255,17 +293,16 @@ export class Render {
 
     /**
      * Draw a tank (player or enemy)
-     * @param {object} tank - Tank object with position properties and arc
      */
-    _drawTank(tank) {
+    _drawTank(tank: TankLike): void {
         const angleInRadians = tank.arc / 180 * Math.PI;
 
         // Handle different tank types: TankPlayer uses centerX/centerY/destW/destH,
         // EnemyTank uses x/y/width/height
-        const posX = tank.centerX || tank.x;
-        const posY = tank.centerY || tank.y;
-        const tankW = tank.destW || tank.width;
-        const tankH = tank.destH || tank.height;
+        const posX = tank.centerX ?? tank.x;
+        const posY = tank.centerY ?? tank.y;
+        const tankW = tank.destW ?? tank.width;
+        const tankH = tank.destH ?? tank.height;
 
         if (!tank.animSheet) {
             // Fallback: draw simple tank
@@ -294,7 +331,7 @@ export class Render {
         this.context.translate(posX, posY);
         this.context.rotate(angleInRadians);
         this.context.drawImage(
-            this.tileSheet,
+            this.tileSheet as HTMLImageElement,
             animFrame.sourceDx, animFrame.sourceDy,
             animFrame.sourceW, animFrame.sourceH,
             -tankW / 2, -tankH / 2,
@@ -303,7 +340,7 @@ export class Render {
         this.context.restore();
     }
 
-    drawBullets() {
+    drawBullets(): void {
         if (!this.gameManager.getBullets) return;
 
         const bullets = this.gameManager.getBullets();
@@ -331,7 +368,7 @@ export class Render {
     /**
      * Draw a single bullet
      */
-    _drawBullet(bullet) {
+    _drawBullet(bullet: BulletLike): void {
         this.context.save();
         // NES Battle City style: white bullets
         this.context.fillStyle = '#FFFFFF';
@@ -344,7 +381,7 @@ export class Render {
         this.context.restore();
     }
 
-    _drawFps() {
+    _drawFps(): void {
         const now = performance.now();
         const delta = now - this.lastTime;
         const fps = delta > 0 ? 1000 / delta : 60;
@@ -354,7 +391,7 @@ export class Render {
         this.context.fillText(`${Math.round(fps)} fps`, 20, 60);
     }
 
-    _drawLevelInfo() {
+    _drawLevelInfo(): void {
         if (!this.levelManager) return;
 
         this.context.fillStyle = '#FFFFFF';

@@ -3,14 +3,61 @@ import { EnemyTank } from '../entities/EnemyTank.js';
 import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
 import { getMapConfig } from '../game/MapConfig.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
+import type { LevelManager } from '../game/levels/LevelManager.js';
+import type { CollisionSystem as CollisionSystemType } from '../systems/CollisionSystem.js';
+import type { Bullet } from '../entities/Bullet.js';
+import type { Direction } from '../types/index.js';
 
+interface GameObjManagerOptions {
+    levelManager?: LevelManager | null;
+    collisionSystem?: CollisionSystemType | null;
+}
+
+interface CommandObject {
+    nextX: number;
+    nextY: number;
+    stop: boolean;
+    fire?: boolean;
+}
+
+interface Bounds {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+}
+
+interface MapDimensions {
+    width: number;
+    height: number;
+}
+
+interface GameState {
+    player: TankPlayer;
+}
+
+/**
+ * GameObjManager - Manages all game objects (player, enemies, bullets)
+ */
 export class GameObjManager {
-    /**
-     * @param {object} options - Configuration options
-     * @param {LevelManager} options.levelManager - Level manager instance (optional)
-     * @param {CollisionSystem} options.collisionSystem - Collision system instance (optional)
-     */
-    constructor(options = {}) {
+    levelManager: LevelManager | null;
+    collisionSystem: CollisionSystemType;
+    gameObjects: TankPlayer[];
+    cmd: CommandObject;
+    bullets: Bullet[];
+    enemies: EnemyTank[];
+    enemiesRemaining: number;
+    enemiesOnField: number;
+    spawnTimer: number;
+    spawnInterval: number;
+    mapConfig: ReturnType<typeof getMapConfig>;
+    score?: number;
+
+    // Optional callbacks
+    onEnemyDestroyed?: (enemy: EnemyTank, points: number) => void;
+    onBaseDestroyed?: () => void;
+
+    constructor(options: GameObjManagerOptions = {}) {
         this.levelManager = options.levelManager || null;
         this.collisionSystem = options.collisionSystem ||
             new CollisionSystem(this.levelManager, { tileSize: 33 });
@@ -58,7 +105,7 @@ export class GameObjManager {
     /**
      * Initialize enemies from level configuration
      */
-    _initEnemies() {
+    _initEnemies(): void {
         if (!this.levelManager || !this.levelManager.currentLevel) return;
 
         const enemyConfig = this.levelManager.getEnemyConfig();
@@ -74,7 +121,7 @@ export class GameObjManager {
     /**
      * Spawn an enemy at a spawn point
      */
-    spawnEnemy() {
+    spawnEnemy(): EnemyTank | null {
         if (!this.levelManager) return null;
 
         const enemyConfig = this.levelManager.getEnemyConfig();
@@ -110,9 +157,8 @@ export class GameObjManager {
 
     /**
      * Get the player bounds (from level manager or default config)
-     * @returns {object} Bounds object with minX, maxX, minY, maxY
      */
-    getBounds() {
+    getBounds(): Bounds {
         if (this.levelManager && this.levelManager.currentLevel) {
             const grid = this.levelManager.getMapGrid();
             if (grid && grid[0]) {
@@ -129,9 +175,8 @@ export class GameObjManager {
 
     /**
      * Get map dimensions
-     * @returns {object} { width, height } in tiles
      */
-    getMapDimensions() {
+    getMapDimensions(): MapDimensions {
         if (this.levelManager && this.levelManager.currentLevel) {
             const grid = this.levelManager.getMapGrid();
             if (grid) {
@@ -150,7 +195,7 @@ export class GameObjManager {
     /**
      * Get all tanks (player + enemies) for collision checking
      */
-    getAllTanks() {
+    getAllTanks(): (TankPlayer | EnemyTank)[] {
         const tanks = [...this.gameObjects];
         for (const enemy of this.enemies) {
             if (enemy.active) {
@@ -162,9 +207,8 @@ export class GameObjManager {
 
     /**
      * Main game update method - handles all game logic
-     * @param {number} deltaTime - Time since last frame in seconds
      */
-    update(deltaTime) {
+    update(deltaTime: number): void {
         if (!this.gameObjects || this.gameObjects.length === 0) {
             return;
         }
@@ -187,7 +231,7 @@ export class GameObjManager {
             const newY = newDestY * this.mapConfig.tileRenderSize;
 
             // Determine movement direction
-            let moveDir = null;
+            let moveDir: Direction | null = null;
             if (cmd.nextX !== 0) moveDir = cmd.nextX > 0 ? 'd' : 'a';
             else if (cmd.nextY !== 0) moveDir = cmd.nextY > 0 ? 's' : 'w';
 
@@ -234,9 +278,9 @@ export class GameObjManager {
     /**
      * Update all enemies
      */
-    _updateEnemies(deltaTime) {
+    _updateEnemies(deltaTime: number): void {
         const player = this.gameObjects[0];
-        const gameState = { player };
+        const gameState: GameState = { player };
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
@@ -280,7 +324,7 @@ export class GameObjManager {
     /**
      * Update enemy spawning
      */
-    _updateSpawning(deltaTime) {
+    _updateSpawning(deltaTime: number): void {
         if (this.enemiesRemaining <= 0) return;
 
         this.spawnTimer += deltaTime;
@@ -293,7 +337,7 @@ export class GameObjManager {
     /**
      * Update all bullets with collision
      */
-    _updateAllBullets(deltaTime, mapWidth, mapHeight) {
+    _updateAllBullets(deltaTime: number, mapWidth: number, mapHeight: number): void {
         const player = this.gameObjects[0];
         const allTanks = this.getAllTanks();
 
@@ -344,7 +388,7 @@ export class GameObjManager {
     /**
      * Remove a bullet from tracking
      */
-    _removeBullet(bullet) {
+    _removeBullet(bullet: Bullet): void {
         const index = this.bullets.indexOf(bullet);
         if (index !== -1) {
             this.bullets.splice(index, 1);
@@ -367,7 +411,7 @@ export class GameObjManager {
     /**
      * Adds a bullet to the game.
      */
-    addBullet(bullet) {
+    addBullet(bullet: Bullet): void {
         if (bullet && bullet.active) {
             this.bullets.push(bullet);
         }
@@ -376,7 +420,7 @@ export class GameObjManager {
     /**
      * Removes a bullet from the game.
      */
-    removeBullet(bullet) {
+    removeBullet(bullet: Bullet): void {
         this._removeBullet(bullet);
     }
 
@@ -384,7 +428,7 @@ export class GameObjManager {
      * Updates all bullets (movement, bounds checking).
      * This method is kept for backward compatibility.
      */
-    updateBullets(deltaTime, mapWidth, mapHeight) {
+    updateBullets(deltaTime: number, mapWidth: number, mapHeight: number): void {
         // Use the full update with collision detection
         this._updateAllBullets(deltaTime, mapWidth, mapHeight);
     }
@@ -392,21 +436,21 @@ export class GameObjManager {
     /**
      * Gets all active bullets.
      */
-    getBullets() {
+    getBullets(): Bullet[] {
         return this.bullets;
     }
 
     /**
      * Get score
      */
-    getScore() {
+    getScore(): number {
         return this.score || 0;
     }
 
     /**
      * Add score
      */
-    addScore(points) {
+    addScore(points: number): void {
         this.score = (this.score || 0) + points;
     }
 }
