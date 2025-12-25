@@ -30,7 +30,7 @@ function canvasSupport(): boolean {
     return !!document.createElement('canvas').getContext;
 }
 
-function canvasApp(): void {
+async function canvasApp(): Promise<void> {
     if (!canvasSupport()) {
         console.error("HTML5 Canvas is not supported in this browser.");
         return;
@@ -67,6 +67,9 @@ function canvasApp(): void {
     const gameManager = new GameObjManager({ levelManager });
     const render = new Render(context, gameManager, { levelManager });
     const apWatcher = new APWatcher(gameManager);
+
+    // Initialize animations from JSON config
+    await gameManager.initAnimations();
 
     // Create state manager
     const stateManager = new StateManager();

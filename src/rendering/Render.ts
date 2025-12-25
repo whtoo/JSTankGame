@@ -6,6 +6,8 @@ import type { GameObjManager as GameObjManagerType } from '../managers/GameObjMa
 import type { LevelManager } from '../game/levels/LevelManager.js';
 import type { CollisionSystem } from '../systems/CollisionSystem.js';
 import type { ISpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import { getTileAtlas, type TileAtlas } from './TileAtlas.js';
+import { getTileRegistry, type TileRegistry } from './TileRegistry.js';
 import type { AnimationFrame } from '../types/index.js';
 import type { Direction } from '../types/index.js';
 
@@ -59,6 +61,8 @@ export class Render {
     offscreenContext: CanvasRenderingContext2D | null;
     mapConfig: ReturnType<typeof getMapConfig>;
     viewport: Viewport;
+    tileAtlas: TileAtlas;
+    tileRegistry: TileRegistry;
 
     constructor(canvasContext: CanvasRenderingContext2D, gameManagerInstance: GameObjManagerType, options: RenderOptions = {}) {
         this.context = canvasContext;
@@ -75,6 +79,10 @@ export class Render {
 
         // Use map config for dimensions
         this.mapConfig = getMapConfig();
+
+        // Get global instances
+        this.tileAtlas = getTileAtlas();
+        this.tileRegistry = getTileRegistry();
 
         // Initialize viewport (disabled by default for full-map rendering)
         this.viewport = {
@@ -162,8 +170,17 @@ export class Render {
 
     async _initialize(): Promise<void> {
         try {
+            // Load spritesheet
             const imageLoader = new ImageResource(tankbrigade);
             this.tileSheet = await imageLoader.load();
+
+            // Initialize tile atlas
+            await this.tileAtlas.init();
+
+            // Initialize tile registry
+            await this.tileRegistry.init();
+
+            // Cache the map
             this._offscreenCache();
         } catch (error) {
             console.error("Failed to initialize Render component:", error);
@@ -213,14 +230,22 @@ export class Render {
 
         for (let rowCtr = 0; rowCtr < mapRows; rowCtr++) {
             for (let colCtr = 0; colCtr < mapCols; colCtr++) {
-                // The map data uses 1-based tile IDs from TMX (firstgid=1), so we don't need indexOffset
-                // TMX tile IDs are already 1-indexed and correctly point to spritesheet positions
                 const tileId = mapData[rowCtr][colCtr];
-                // For TMX compatibility, tile IDs are 1-indexed, convert to 0-indexed for calculation
-                const adjustedTileId = tileId - 1;
-                // Use tileSourceSize (32) for source coordinates
-                const sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
-                const sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
+
+                // Try to get tile rect from registry first (JSON-based)
+                let sourceX: number, sourceY: number;
+
+                const tileRect = this.tileRegistry.getTileRect(tileId);
+                if (tileRect) {
+                    // Use JSON config coordinates
+                    sourceX = tileRect.x;
+                    sourceY = tileRect.y;
+                } else {
+                    // Fallback to grid-based calculation for unknown tiles
+                    const adjustedTileId = tileId - 1;
+                    sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
+                    sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
+                }
 
                 this.offscreenContext.drawImage(
                     this.tileSheet,
@@ -273,12 +298,20 @@ export class Render {
         const x = basePos.x * tileRenderSize;
         const y = basePos.y * tileRenderSize;
 
-        // Draw eagle/briefcase sprite
-        // Eagle is at TMX tile ID 102 (1-indexed), convert to 0-indexed for calculation
-        const adjustedTileId = 102 - 1;
-        // Use tileSourceSize (32) for source coordinates
-        const sourceX = (adjustedTileId % this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
-        const sourceY = Math.floor(adjustedTileId / this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
+        // Try to use tile from registry first
+        let sourceX: number, sourceY: number;
+
+        // Eagle/briefcase is typically at tile ID 102, try registry first
+        const tileRect = this.tileRegistry.getTileRect(102);
+        if (tileRect) {
+            sourceX = tileRect.x;
+            sourceY = tileRect.y;
+        } else {
+            // Fallback to grid-based calculation
+            const adjustedTileId = 102 - 1;
+            sourceX = (adjustedTileId % this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
+            sourceY = Math.floor(adjustedTileId / this.mapConfig.tilesPerRowInSheet) * tileSourceSize;
+        }
 
         this.context.drawImage(
             this.tileSheet,
@@ -328,11 +361,19 @@ export class Render {
             for (let colCtr = bounds.startX; colCtr < bounds.endX; colCtr++) {
                 const tileId = mapData[rowCtr]?.[colCtr];
                 if (tileId === TileType.GRASS) {
-                    // TMX tile IDs are 1-indexed, convert to 0-indexed for calculation
-                    const adjustedTileId = tileId - 1;
-                    // Use tileSourceSize (32) for source coordinates
-                    const sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
-                    const sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
+                    let sourceX: number, sourceY: number;
+
+                    // Try to get tile rect from registry first (JSON-based)
+                    const tileRect = this.tileRegistry.getTileRect(tileId);
+                    if (tileRect) {
+                        sourceX = tileRect.x;
+                        sourceY = tileRect.y;
+                    } else {
+                        // Fallback to grid-based calculation
+                        const adjustedTileId = tileId - 1;
+                        sourceX = (adjustedTileId % tilesPerRowInSheet) * tileSourceSize;
+                        sourceY = Math.floor(adjustedTileId / tilesPerRowInSheet) * tileSourceSize;
+                    }
 
                     this.context.drawImage(
                         this.tileSheet as HTMLImageElement,
@@ -506,5 +547,86 @@ export class Render {
         this.context.textAlign = 'right';
         this.context.fillText(`STAGE ${level}`, 780, 24);
         this.context.textAlign = 'left';
+    }
+
+    // ========================================================================
+    // TileAtlas-based rendering methods
+    // ========================================================================
+
+    /**
+     * Draw a tile by name using TileAtlas
+     * @param tileName - Name from entities.json (e.g., 'wall_steel', 'explosion_small')
+     * @param destX - Destination X on canvas
+     * @param destY - Destination Y on canvas
+     * @param destW - Optional destination width
+     * @param destH - Optional destination height
+     * @returns true if tile was drawn, false if not found
+     */
+    drawTileByName(
+        tileName: string,
+        destX: number,
+        destY: number,
+        destW?: number,
+        destH?: number
+    ): boolean {
+        if (!this.tileSheet || !this.tileAtlas.isReady()) {
+            console.warn('Cannot draw tile: spritesheet or atlas not ready');
+            return false;
+        }
+
+        return this.tileAtlas.drawTile(
+            this.context,
+            this.tileSheet,
+            tileName,
+            destX,
+            destY,
+            destW,
+            destH
+        );
+    }
+
+    /**
+     * Draw explosion effect at position
+     * @param x - Canvas X position
+     * @param y - Canvas Y position
+     * @param size - 'small', 'medium', or 'large'
+     */
+    drawExplosion(x: number, y: number, size: 'small' | 'medium' | 'large' = 'medium'): void {
+        const tileName = `explosion_${size}`;
+        this.drawTileByName(tileName, x - 16, y - 16, 32, 32);
+    }
+
+    /**
+     * Draw a bullet/projetile sprite
+     * @param x - Center X position
+     * @param y - Center Y position
+     * @param type - 'small' for regular bullet, 'heavy' for shell
+     */
+    drawProjectile(x: number, y: number, type: 'small' | 'heavy' = 'small'): void {
+        const tileName = type === 'heavy' ? 'shell_heavy' : 'bullet_small';
+        this.drawTileByName(tileName, x - 16, y - 16, 32, 32);
+    }
+
+    /**
+     * Draw base/eagle using TileAtlas
+     * Alternative to drawBase() that uses the config system
+     */
+    drawBaseFromAtlas(tileX: number, tileY: number): void {
+        const tileRenderSize = this.mapConfig.tileRenderSize;
+        this.drawTileByName('eagle_icon', tileX * tileRenderSize, tileY * tileRenderSize, tileRenderSize, tileRenderSize);
+    }
+
+    /**
+     * Check if a tile exists in the atlas
+     */
+    hasTile(tileName: string): boolean {
+        return this.tileAtlas.hasTile(tileName);
+    }
+
+    /**
+     * Get all available tile names in a category
+     */
+    getTilesInCategory(category: string): string[] {
+        return this.tileAtlas.getTilesByCategory(category);
     }
 }

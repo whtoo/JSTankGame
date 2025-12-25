@@ -84,13 +84,29 @@ export class Bullet {
 
     /**
      * Checks if bullet is outside map boundaries.
+     * Uses the bullet's center point for checking, and constrains within the map.
      */
     isOutOfBounds(mapWidth: number, mapHeight: number): boolean {
+        const halfSize = this.size / 2;
+
+        // Check if bullet's center is outside map bounds
+        // or if bullet's edge extends beyond map bounds
         return (
-            this.x < 0 ||
-            this.x >= mapWidth ||
-            this.y < 0 ||
-            this.y >= mapHeight
+            this.x - halfSize < 0 ||
+            this.x + halfSize > mapWidth ||
+            this.y - halfSize < 0 ||
+            this.y + halfSize > mapHeight
         );
+    }
+
+    /**
+     * Constrain bullet position within map bounds.
+     * Called when bullet would otherwise go out of bounds.
+     */
+    constrainToBounds(mapWidth: number, mapHeight: number): void {
+        const halfSize = this.size / 2;
+
+        this.x = Math.max(halfSize, Math.min(this.x, mapWidth - halfSize));
+        this.y = Math.max(halfSize, Math.min(this.y, mapHeight - halfSize));
     }
 }

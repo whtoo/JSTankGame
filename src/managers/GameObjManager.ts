@@ -1,6 +1,7 @@
 import { TankPlayer } from '../entities/TankPlayer.js';
 import { EnemyTank } from '../entities/EnemyTank.js';
-import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import { SpriteAnimSheet, DirectionalAnimSheet } from '../animation/SpriteAnimSheet.js';
+import { getAnimManager } from '../animation/AnimManager.js';
 import { getMapConfig } from '../game/MapConfig.js';
 import { CollisionSystem } from '../systems/CollisionSystem.js';
 import { BulletPool } from '../pooling/ObjectPool.js';
@@ -54,6 +55,8 @@ export class GameObjManager {
     mapConfig: ReturnType<typeof getMapConfig>;
     score?: number;
     private bulletPool: BulletPool;
+    private animationsInitialized: boolean;
+    private animManager: ReturnType<typeof getAnimManager>;
 
     // Optional callbacks
     onEnemyDestroyed?: (enemy: EnemyTank, points: number) => void;
@@ -63,6 +66,10 @@ export class GameObjManager {
         this.levelManager = options.levelManager || null;
         this.collisionSystem = options.collisionSystem ||
             new CollisionSystem(this.levelManager, { tileSize: 33 });
+
+        // Get anim manager instance
+        this.animManager = getAnimManager();
+        this.animationsInitialized = false;
 
         // Initialize bullet pool (20 pre-allocated bullets, max 100)
         this.bulletPool = new BulletPool(20, 100);
@@ -74,10 +81,13 @@ export class GameObjManager {
         const startDir = playerStart ? playerStart.direction : 'w';
 
         const player = new TankPlayer('Player', startDir, 0);
-        player.x = startX;
-        player.y = startY;
+        player.X = startX;
+        player.Y = startY;
+        player.destX = Math.floor(startX / player.destCook);
+        player.destY = Math.floor(startY / player.destCook);
         player.updateSelfCoor();
-        // Player tank sprites: row 0, columns 0-7 (4 directions × 2 frames for animation)
+
+        // Use legacy animation for now, will be upgraded after initAnimations()
         player.animSheet = new SpriteAnimSheet(0, 7, 0);
 
         this.gameObjects = [player];
@@ -123,6 +133,50 @@ export class GameObjManager {
         this.enemies = [];
     }
 
+    // Cache for pre-loaded enemy animations
+    private enemyAnimationCache: Map<string, DirectionalAnimSheet> = new Map();
+
+    /**
+     * Initialize animations from JSON config
+     * Call this after constructing GameObjManager
+     */
+    async initAnimations(): Promise<void> {
+        if (this.animationsInitialized) return;
+
+        // Load player animation
+        const player = this.gameObjects[0];
+        if (player) {
+            const playerAnim = await this.animManager.loadAnimation('player_green_lvl1', player.direction);
+            if (playerAnim) {
+                player.animSheet = playerAnim;
+            }
+        }
+
+        // Pre-load all enemy animations
+        const enemyTypes: Array<{ type: string; animName: string }> = [
+            { type: 'basic', animName: 'enemy_blue_lvl1' },
+            { type: 'fast', animName: 'enemy_white_scout' },
+            { type: 'power', animName: 'enemy_blue_lvl2' },
+            { type: 'armor', animName: 'enemy_blue_lvl2' }
+        ];
+
+        for (const { type, animName } of enemyTypes) {
+            const anim = await this.animManager.loadAnimation(animName, 's');
+            if (anim) {
+                this.enemyAnimationCache.set(type, anim);
+            }
+        }
+
+        this.animationsInitialized = true;
+    }
+
+    /**
+     * Get cached animation for enemy type
+     */
+    getEnemyAnimation(enemyType: string): DirectionalAnimSheet | null {
+        return this.enemyAnimationCache.get(enemyType) || null;
+    }
+
     /**
      * Spawn an enemy at a spawn point
      */
@@ -133,7 +187,7 @@ export class GameObjManager {
         if (!enemyConfig || this.enemiesOnField >= enemyConfig.maxOnField) return null;
 
         const spawnPoints = this.levelManager.getEnemySpawnPoints();
-        if (spawnPoints.length === 0) return null;
+        if (!spawnPoints || spawnPoints.length === 0) return null;
 
         // Select random spawn point
         const spawnPoint = spawnPoints[Math.floor(Math.random() * spawnPoints.length)];
@@ -146,11 +200,15 @@ export class GameObjManager {
         const pixelX = spawnPoint.x * tileSize + tileSize / 2;
         const pixelY = spawnPoint.y * tileSize + tileSize / 2;
 
+        // Get cached animation for this enemy type
+        const animSheet = this.getEnemyAnimation(type);
+
         const enemy = new EnemyTank({
             type,
             x: pixelX,
             y: pixelY,
-            direction: 's' // Enemies spawn facing down
+            direction: 's', // Enemies spawn facing down
+            animSheet: animSheet || undefined
         });
 
         this.enemies.push(enemy);
@@ -222,6 +280,8 @@ export class GameObjManager {
         const cmd = this.cmd;
         const bounds = this.getBounds();
         const mapDims = this.getMapDimensions();
+        const mapWidth = mapDims.width * this.mapConfig.tileRenderSize;
+        const mapHeight = mapDims.height * this.mapConfig.tileRenderSize;
 
         // Player movement with collision detection
         if (cmd.stop === false) {
@@ -254,6 +314,9 @@ export class GameObjManager {
                 player.destY = Math.max(bounds.minY, Math.min(newDestY, bounds.maxY));
                 player.destX = Math.max(bounds.minX, Math.min(newDestX, bounds.maxX));
                 player.updateSelfCoor();
+
+                // Constrain to map bounds (ensure tank stays fully inside viewport)
+                player.constrainToBounds(mapWidth, mapHeight);
             }
         }
 
@@ -271,8 +334,6 @@ export class GameObjManager {
 
         // Update bullets with collision detection
         if (this.updateBullets) {
-            const mapWidth = mapDims.width * this.mapConfig.tileRenderSize;
-            const mapHeight = mapDims.height * this.mapConfig.tileRenderSize;
             this._updateAllBullets(deltaTime, mapWidth, mapHeight);
         }
 
@@ -286,6 +347,10 @@ export class GameObjManager {
     _updateEnemies(deltaTime: number): void {
         const player = this.gameObjects[0];
         const gameState: GameState = { player };
+
+        const mapDims = this.getMapDimensions();
+        const mapWidth = mapDims.width * this.mapConfig.tileRenderSize;
+        const mapHeight = mapDims.height * this.mapConfig.tileRenderSize;
 
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
@@ -312,6 +377,13 @@ export class GameObjManager {
                 enemy.x = oldX;
                 enemy.y = oldY;
                 // Change direction when hitting wall
+                enemy.changeRandomDirection();
+            }
+
+            // Constrain to map bounds (viewport constraint)
+            const hitBoundary = enemy.constrainToBounds(mapWidth, mapHeight);
+            if (hitBoundary) {
+                // Change direction when hitting boundary
                 enemy.changeRandomDirection();
             }
 

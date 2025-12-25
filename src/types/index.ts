@@ -155,3 +155,95 @@ export interface KeyMap {
   pause: string[];
   menu?: string[];
 }
+
+// ============================================================================
+// Animation Configuration Types (anim.json)
+// ============================================================================
+
+/** Sprite rectangle with absolute coordinates */
+export interface SpriteRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Animation sequences for different directions */
+export interface AnimationSequences {
+  up: SpriteRect;
+  right: SpriteRect;
+  down: SpriteRect;
+  left: SpriteRect;
+}
+
+/** Single animation definition */
+export interface AnimationDefinition {
+  type: 'Player' | 'Enemy' | 'Effect' | 'Projectile';
+  description: string;
+  sequences: AnimationSequences;
+}
+
+/** Animation configuration root */
+export interface AnimationConfig {
+  animations: Record<string, AnimationDefinition>;
+}
+
+// ============================================================================
+// Tile/Entities Configuration Types (entities.json)
+// ============================================================================
+
+/** Single tile definition */
+export interface TileDefinition {
+  name: string;
+  desc: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Tile layer category */
+export interface TileLayer {
+  category: string;
+  tiles: TileDefinition[];
+}
+
+/** Tileset information */
+export interface TilesetInfo {
+  file_name: string;
+  name: string;
+  base_tile_size: number;
+  total_width: number;
+  total_height: number;
+}
+
+/** Entities configuration root */
+export interface EntitiesConfig {
+  tileset_info: TilesetInfo;
+  layers: TileLayer[];
+}
+
+// ============================================================================
+// Direction Mapping (for animation lookup)
+// ============================================================================
+
+/** Direction for animation lookup */
+export type AnimationDirection = 'up' | 'right' | 'down' | 'left';
+
+/** Map game direction to animation direction */
+export function toAnimationDirection(dir: Direction): AnimationDirection {
+  switch (dir) {
+    case 'w':
+    case 'up':
+      return 'up';
+    case 'd':
+    case 'right':
+      return 'right';
+    case 's':
+    case 'down':
+      return 'down';
+    case 'a':
+    case 'left':
+      return 'left';
+  }
+}

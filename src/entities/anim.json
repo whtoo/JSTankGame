@@ -1,0 +1,54 @@
+{
+  "animations": {
+    "player_green_lvl1": {
+      "type": "Player",
+      "description": "基础绿色坦克 (第一行)",
+      "sequences": {
+        "up":    {"x": 608, "y": 0,   "w": 32, "h": 32},
+        "right": {"x": 640, "y": 0,   "w": 32, "h": 32},
+        "down":  {"x": 672, "y": 0,   "w": 32, "h": 32},
+        "left":  {"x": 704, "y": 0,   "w": 32, "h": 32}
+      }
+    },
+    "player_green_lvl2": {
+      "type": "Player",
+      "description": "强化绿色坦克 (第二行)",
+      "sequences": {
+        "up":    {"x": 608, "y": 32,  "w": 32, "h": 32},
+        "right": {"x": 640, "y": 32,  "w": 32, "h": 32},
+        "down":  {"x": 672, "y": 32,  "w": 32, "h": 32},
+        "left":  {"x": 704, "y": 32,  "w": 32, "h": 32}
+      }
+    },
+    "enemy_blue_lvl1": {
+      "type": "Enemy",
+      "description": "基础蓝色坦克 (右侧 2x2 布局)",
+      "sequences": {
+        "up":    {"x": 736, "y": 0,   "w": 32, "h": 32},
+        "right": {"x": 768, "y": 0,   "w": 32, "h": 32},
+        "down":  {"x": 736, "y": 32,  "w": 32, "h": 32},
+        "left":  {"x": 768, "y": 32,  "w": 32, "h": 32}
+      }
+    },
+    "enemy_blue_lvl2": {
+      "type": "Enemy",
+      "description": "重型蓝色坦克 (下方序列)",
+      "sequences": {
+        "up":    {"x": 736, "y": 128, "w": 32, "h": 32},
+        "right": {"x": 768, "y": 128, "w": 32, "h": 32},
+        "down":  {"x": 736, "y": 160, "w": 32, "h": 32},
+        "left":  {"x": 768, "y": 160, "w": 32, "h": 32}
+      }
+    },
+    "enemy_white_scout": {
+      "type": "Enemy",
+      "description": "白色侦察坦克 (y轴偏移 256)",
+      "sequences": {
+        "up":    {"x": 608, "y": 256, "w": 32, "h": 32},
+        "right": {"x": 640, "y": 256, "w": 32, "h": 32},
+        "down":  {"x": 672, "y": 256, "w": 32, "h": 32},
+        "left":  {"x": 704, "y": 256, "w": 32, "h": 32}
+      }
+    }
+  }
+}

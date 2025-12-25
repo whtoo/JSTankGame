@@ -32,9 +32,9 @@ export const MAP_CONFIG: IMapConfig = {
     indexOffset: 0,      // TMX uses 1-indexed IDs, so no offset needed when we subtract 1
     playerBounds: {
         minX: 0,
-        maxX: 23,
+        maxX: 22,  // 0-indexed: 23 columns means indices 0-22
         minY: 0,
-        maxY: 13
+        maxY: 12   // 0-indexed: 13 rows means indices 0-12
     }
 };
 

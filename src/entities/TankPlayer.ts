@@ -7,6 +7,11 @@ import { Bullet } from './Bullet.js';
 import { directionToAngle, getMovementVector } from '../utils/MovementUtils.js';
 import type { Direction, ISpriteAnimSheet } from '../types/index.js';
 
+// Union type to support both legacy and new animation systems
+export type TankAnimSheet = ISpriteAnimSheet & {
+    setDirection?(dir: Direction): void;
+};
+
 export interface CommandObject {
     nextX: number;
     nextY: number;
@@ -33,7 +38,7 @@ export class TankPlayer extends Player {
     powerLevel: number;
     maxBullets: number;
     activeBullets: Bullet[];
-    animSheet?: ISpriteAnimSheet & { orderIndex?: number };
+    animSheet?: TankAnimSheet;
 
     constructor(tankID: string, initDirection: Direction, isUser: number | boolean) {
         super();
@@ -77,16 +82,17 @@ export class TankPlayer extends Player {
         if (directionAttempt !== this.direction) {
             this.direction = directionAttempt;
             this.arc = directionToAngle(directionAttempt);
+
+            // Update direction for DirectionalAnimSheet
+            if (this.animSheet && this.animSheet.setDirection) {
+                this.animSheet.setDirection(this.direction);
+            }
         }
 
         if (cmd.stop === false) {
             const movement = getMovementVector(this.direction, this.per);
             cmd.nextX = movement.x;
             cmd.nextY = movement.y;
-
-            if (this.animSheet && this.animSheet.orderIndex !== undefined) {
-                this.animSheet.orderIndex++;
-            }
         }
     }
 
@@ -140,5 +146,28 @@ export class TankPlayer extends Player {
         if (index !== -1) {
             this.activeBullets.splice(index, 1);
         }
+    }
+
+    /**
+     * Constrain player position within map bounds.
+     * Ensures the tank stays fully inside the viewport.
+     * @param mapWidth Map width in pixels
+     * @param mapHeight Map height in pixels
+     */
+    constrainToBounds(mapWidth: number, mapHeight: number): void {
+        const halfW = this.destW / 2;
+        const halfH = this.destH / 2;
+
+        // Constrain center position (using centerX/centerY)
+        this.centerX = Math.max(halfW, Math.min(this.centerX, mapWidth - halfW));
+        this.centerY = Math.max(halfH, Math.min(this.centerY, mapHeight - halfH));
+
+        // Recalculate X/Y from center
+        this.X = this.centerX - this.destW / 2;
+        this.Y = this.centerY - this.destH / 2;
+
+        // Recalculate tile position
+        this.destX = Math.floor(this.X / this.destCook);
+        this.destY = Math.floor(this.Y / this.destCook);
     }
 }

@@ -4,6 +4,7 @@
 
 import { Bullet } from './Bullet.js';
 import { SpriteAnimSheet } from '../animation/SpriteAnimSheet.js';
+import type { DirectionalAnimSheet } from '../animation/SpriteAnimSheet.js';
 import {
     directionToAngle,
     angleToDirection,
@@ -15,6 +16,11 @@ import {
     getDirectionToward
 } from '../utils/MovementUtils.js';
 import type { Direction, EnemyType, ISpriteAnimSheet } from '../types/index.js';
+
+// Union type to support both legacy and new animation systems
+export type TankAnimSheet = ISpriteAnimSheet & {
+    setDirection?(dir: Direction): void;
+};
 
 interface EnemyTankOptions {
     id?: string;
@@ -64,7 +70,7 @@ export class EnemyTank {
     fireTimer: number;
     directionChangeTimer: number;
     isMoving: boolean;
-    animSheet: ISpriteAnimSheet;
+    animSheet: TankAnimSheet;
     activeBullets: Bullet[];
     maxBullets: number;
     powerLevel: number;
@@ -186,6 +192,11 @@ export class EnemyTank {
     changeRandomDirection(): void {
         this.direction = getRandomValidDirection(this.direction);
         this.arc = directionToAngle(this.direction);
+
+        // Update direction for DirectionalAnimSheet
+        if (this.animSheet && this.animSheet.setDirection) {
+            this.animSheet.setDirection(this.direction);
+        }
     }
 
     move(deltaTime: number): void {
@@ -198,6 +209,27 @@ export class EnemyTank {
         if (this.animSheet) {
             this.animSheet.getFrames();
         }
+    }
+
+    /**
+     * Constrain enemy position within map bounds.
+     * @param mapWidth Map width in pixels
+     * @param mapHeight Map height in pixels
+     * @returns true if position was adjusted (hit boundary)
+     */
+    constrainToBounds(mapWidth: number, mapHeight: number): boolean {
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+
+        const oldX = this.x;
+        const oldY = this.y;
+
+        // Constrain within bounds (keep tank fully inside)
+        this.x = Math.max(halfWidth, Math.min(this.x, mapWidth - halfWidth));
+        this.y = Math.max(halfHeight, Math.min(this.y, mapHeight - halfHeight));
+
+        // Return true if position was adjusted
+        return this.x !== oldX || this.y !== oldY;
     }
 
     shouldFire(gameState: GameState): boolean {
