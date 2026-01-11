@@ -4,6 +4,8 @@
  */
 
 import type { AnimationConfig, EntitiesConfig, AnimationDefinition, TileDefinition } from '../types/index.js';
+import animationConfigJson from '../entities/anim.json' assert { type: 'json' };
+import entitiesConfigJson from '../entities/entities.json' assert { type: 'json' };
 
 /** Cached configuration data */
 interface CachedConfigs {
@@ -14,19 +16,11 @@ interface CachedConfigs {
 class ConfigLoader {
   private static instance: ConfigLoader;
   private configs: CachedConfigs;
-  private loadPromises: {
-    animation: Promise<AnimationConfig> | null;
-    entities: Promise<EntitiesConfig> | null;
-  };
 
   private constructor() {
     this.configs = {
-      animation: null,
-      entities: null
-    };
-    this.loadPromises = {
-      animation: null,
-      entities: null
+      animation: animationConfigJson as AnimationConfig,
+      entities: entitiesConfigJson as EntitiesConfig
     };
   }
 
@@ -40,58 +34,18 @@ class ConfigLoader {
 
   /**
    * Load animation configuration (anim.json)
-   * Caches the result after first load
+   * Returns pre-loaded config immediately
    */
   async loadAnimationConfig(): Promise<AnimationConfig> {
-    if (this.configs.animation) {
-      return this.configs.animation;
-    }
-
-    if (this.loadPromises.animation) {
-      return this.loadPromises.animation;
-    }
-
-    this.loadPromises.animation = fetch('/src/entities/anim.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to load anim.json: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        this.configs.animation = data;
-        return data;
-      });
-
-    return this.loadPromises.animation;
+    return this.configs.animation!;
   }
 
   /**
    * Load entities configuration (entities.json)
-   * Caches the result after first load
+   * Returns pre-loaded config immediately
    */
   async loadEntitiesConfig(): Promise<EntitiesConfig> {
-    if (this.configs.entities) {
-      return this.configs.entities;
-    }
-
-    if (this.loadPromises.entities) {
-      return this.loadPromises.entities;
-    }
-
-    this.loadPromises.entities = fetch('/src/entities/entities.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to load entities.json: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        this.configs.entities = data;
-        return data;
-      });
-
-    return this.loadPromises.entities;
+    return this.configs.entities!;
   }
 
   /**
