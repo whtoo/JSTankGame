@@ -1,0 +1,101 @@
+{
+  "version": "1.0",
+  "tiledversion": "1.11.0",
+  "name": "Tank Brigade Tileset",
+  "type": "tileset",
+  "tilewidth": 33,
+  "tileheight": 33,
+  "spacing": 0,
+  "margin": 0,
+  "columns": 24,
+  "tilecount": 432,
+  "image": {
+    "source": "tankbrigade.png",
+    "width": 800,
+    "height": 600,
+    "trans": null
+  },
+  "tiles": [
+    {
+      "id": 0,
+      "type": "empty",
+      "properties": {
+        "name": "Empty Space",
+        "passable": true,
+        "destructible": false,
+        "description": "Black background, open area"
+      }
+    },
+    {
+      "id": 17,
+      "type": "wall",
+      "properties": {
+        "name": "Brick Wall",
+        "passable": false,
+        "destructible": true,
+        "hitPoints": 4,
+        "description": "Red brick pattern wall"
+      }
+    },
+    {
+      "id": 99,
+      "type": "grass",
+      "properties": {
+        "name": "Grass Terrain",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "description": "Green grass with texture"
+      }
+    },
+    {
+      "id": 59,
+      "type": "concrete",
+      "properties": {
+        "name": "Concrete",
+        "passable": true,
+        "destructible": false,
+        "hitPoints": 999,
+        "description": "White concrete block"
+      }
+    },
+    {
+      "id": 54,
+      "type": "base_eagle",
+      "properties": {
+        "name": "Eagle Base",
+        "passable": false,
+        "destructible": true,
+        "critical": true,
+        "description": "The base to defend"
+      }
+    },
+    {
+      "id": 73,
+      "type": "player_tank",
+      "properties": {
+        "name": "Player Tank",
+        "faction": "player",
+        "moveSpeed": 2,
+        "fireRate": 500,
+        "description": "Yellow player tank"
+      }
+    },
+    {
+      "id": 74,
+      "type": "enemy_tank",
+      "properties": {
+        "name": "Enemy Tank",
+        "faction": "enemy",
+        "moveSpeed": 1,
+        "fireRate": 1000,
+        "description": "Green enemy tank"
+      }
+    }
+  ],
+  "grid": {
+    "orientation": "orthogonal",
+    "width": 33,
+    "height": 33
+  }
+}
