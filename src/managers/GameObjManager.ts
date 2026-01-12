@@ -9,6 +9,7 @@ import type { LevelManager } from '../game/levels/LevelManager.js';
 import type { CollisionSystem as CollisionSystemType } from '../systems/CollisionSystem.js';
 import type { Bullet } from '../entities/Bullet.js';
 import type { Direction } from '../types/index.js';
+import { getTileMapLoader } from '../game/TileMapLoader.js';
 
 interface GameObjManagerOptions {
     levelManager?: LevelManager | null;
@@ -66,6 +67,9 @@ export class GameObjManager {
         this.levelManager = options.levelManager || null;
         this.collisionSystem = options.collisionSystem ||
             new CollisionSystem(this.levelManager, { tileSize: 33 });
+
+        // Set tileMapLoader in collision system
+        this.collisionSystem.setTileMapLoader(getTileMapLoader());
 
         // Get anim manager instance
         this.animManager = getAnimManager();

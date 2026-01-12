@@ -6,10 +6,11 @@ import { GameObjManager } from './managers/GameObjManager.js';
 import { Render } from './rendering/Render.js';
 import { APWatcher } from './input/APWatcher.js';
 import { GameLoop } from './game/GameLoop.js';
-import { StateManager, GameStateType } from './game/GameState.js';
-import { LevelManager } from './game/levels/LevelManager.js';
+import { StateManager } from './game/GameState.js';
 import { setLogLevel, LogLevel } from './utils/Logger.js';
 import { GAME_CONFIG } from './game/GameConfig.js';
+import { getTileMapLoader } from './game/TileMapLoader.js';
+import { TileLevelManager } from './game/levels/TileLevelManager.js';
 import '../css/main.css';
 
 // Configure logging
@@ -49,7 +50,7 @@ async function canvasApp(): Promise<void> {
     }
 
     // Instantiate level manager
-    const levelManager = new LevelManager({
+    const tileLevelManager = new TileLevelManager({
         startLevel: 1,
         loopLevels: false,
         onLevelStart: (level) => {
@@ -64,12 +65,23 @@ async function canvasApp(): Promise<void> {
     });
 
     // Instantiate game components
-    const gameManager = new GameObjManager({ levelManager });
-    const render = new Render(context, gameManager, { levelManager });
-    const apWatcher = new APWatcher(gameManager);
+    const tileMapLoader = getTileMapLoader();
+    const gameManager = new GameObjManager({ levelManager: tileLevelManager });
+    const render = new Render(context, gameManager, {
+        levelManager: tileLevelManager,
+        tileMapLoader: tileMapLoader
+    });
+    // Initialize input watcher (handles keyboard events internally)
+    new APWatcher(gameManager);
+
+    // Load map data for the current level
+    await tileMapLoader.loadLevel('level2.json', 'tileset.json');
 
     // Initialize animations from JSON config
     await gameManager.initAnimations();
+
+    // Initialize TileLevelManager
+    await tileLevelManager.init();
 
     // Create state manager
     const stateManager = new StateManager();
@@ -82,9 +94,9 @@ async function canvasApp(): Promise<void> {
     });
 
     // Setup level change handler to refresh render cache
-    const originalOnLevelStart = levelManager.onLevelStart?.bind(levelManager);
+    const originalOnLevelStart = tileLevelManager.onLevelStart?.bind(tileLevelManager);
     if (originalOnLevelStart) {
-        levelManager.onLevelStart = (level) => {
+        tileLevelManager.onLevelStart = (level) => {
             originalOnLevelStart(level);
             render.refreshMapCache();
         };
@@ -101,7 +113,7 @@ async function canvasApp(): Promise<void> {
 
     // Expose for debugging
     if (GAME_CONFIG.debugMode) {
-        (window as any).gameLevelManager = levelManager;
+        (window as any).gameLevelManager = tileLevelManager;
         (window as any).gameManager = gameManager;
         (window as any).gameLoop = gameLoop;
     }

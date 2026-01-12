@@ -5,6 +5,7 @@
 import { TileType } from '../game/levels/LevelConfig.js';
 import type { Direction, CollisionResult, Position, Size } from '../types/index.js';
 import type { LevelManager } from '../game/levels/LevelManager.js';
+import type { TileMapLoader } from '../game/TileMapLoader.js';
 
 interface TankBounds {
     x: number;
@@ -37,6 +38,7 @@ interface CollisionSystemOptions {
 
 export class CollisionSystem {
     levelManager: LevelManager | null;
+    tileMapLoader: TileMapLoader | null;
     tileSize: number;
     gridSize: number;
     private gridCache: number[][] | null;
@@ -44,10 +46,15 @@ export class CollisionSystem {
 
     constructor(levelManager: LevelManager | null, options: CollisionSystemOptions = {}) {
         this.levelManager = levelManager;
+        this.tileMapLoader = null;
         this.tileSize = options.tileSize || 33;
         this.gridSize = options.gridSize || 32;
         this.gridCache = null;
         this.cacheTimestamp = 0;
+    }
+
+    setTileMapLoader(loader: TileMapLoader | null): void {
+        this.tileMapLoader = loader;
     }
 
     /**
@@ -125,6 +132,16 @@ export class CollisionSystem {
         }
 
         const tileId = grid[y][x];
+
+        // Use TileMapLoader to check passability if available
+        if (this.tileMapLoader) {
+            const tilesetData = this.tileMapLoader.getCachedMap('level2.json')?.tilesetData;
+            if (tilesetData) {
+                return !this.tileMapLoader.isTilePassable(tileId, tilesetData);
+            }
+        }
+
+        // Fallback to old method using TileType constants
         const solidTiles = [TileType.BRICK, TileType.STEEL, TileType.WATER, TileType.BASE];
         return solidTiles.includes(tileId);
     }
