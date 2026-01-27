@@ -9,3 +9,12 @@ dist
 test-results/
 playwright-report/*
 coverage/
+e2e/
+coverage/
+.nyc_output/
+kimi_browser
+playwright-*
+test
+tools
+.agents
+.kimi
