@@ -1,0 +1,391 @@
+{
+  "version": "1.1",
+  "tiledversion": "1.11.0",
+  "name": "Tank Brigade Complete Tileset",
+  "type": "tileset",
+  "tilewidth": 33,
+  "tileheight": 33,
+  "spacing": 0,
+  "margin": 0,
+  "columns": 24,
+  "tilecount": 432,
+  "image": {
+    "source": "tankbrigade.png",
+    "width": 800,
+    "height": 600,
+    "trans": null
+  },
+  "tiles": [
+    {
+      "id": 0,
+      "type": "empty",
+      "properties": {
+        "name": "Empty Space",
+        "passable": true,
+        "destructible": false,
+        "description": "Black background, open area"
+      }
+    },
+    {
+      "id": 16,
+      "type": "empty_variant",
+      "properties": {
+        "name": "Empty Variant",
+        "passable": true,
+        "destructible": false,
+        "description": "Alternative empty tile"
+      }
+    },
+    {
+      "id": 17,
+      "type": "wall",
+      "properties": {
+        "name": "Brick Wall",
+        "passable": false,
+        "destructible": true,
+        "hitPoints": 4,
+        "description": "Red brick pattern wall",
+        "pixelX": 0,
+        "pixelY": 132
+      }
+    },
+    {
+      "id": 54,
+      "type": "base_eagle",
+      "properties": {
+        "name": "Eagle Base",
+        "passable": false,
+        "destructible": true,
+        "critical": true,
+        "hitPoints": 1,
+        "description": "The base to defend",
+        "pixelX": 363,
+        "pixelY": 33
+      }
+    },
+    {
+      "id": 55,
+      "type": "wall_side",
+      "properties": {
+        "name": "Wall Side",
+        "passable": false,
+        "destructible": true,
+        "hitPoints": 3,
+        "description": "Side wall piece",
+        "pixelX": 231,
+        "pixelY": 66
+      }
+    },
+    {
+      "id": 59,
+      "type": "concrete",
+      "properties": {
+        "name": "Concrete Block",
+        "passable": false,
+        "destructible": false,
+        "hitPoints": 999,
+        "description": "White concrete block",
+        "pixelX": 363,
+        "pixelY": 66
+      }
+    },
+    {
+      "id": 60,
+      "type": "concrete_variant",
+      "properties": {
+        "name": "Concrete Variant",
+        "passable": false,
+        "destructible": false,
+        "hitPoints": 999,
+        "description": "Alternative concrete block",
+        "pixelX": 396,
+        "pixelY": 66
+      }
+    },
+    {
+      "id": 74,
+      "type": "terrain_mixed",
+      "properties": {
+        "name": "Mixed Terrain",
+        "passable": true,
+        "destructible": false,
+        "description": "Mixed terrain tile",
+        "pixelX": 66,
+        "pixelY": 99
+      }
+    },
+    {
+      "id": 78,
+      "type": "wall_concrete",
+      "properties": {
+        "name": "Concrete Wall",
+        "passable": false,
+        "destructible": false,
+        "hitPoints": 999,
+        "description": "Concrete wall section",
+        "pixelX": 198,
+        "pixelY": 99
+      }
+    },
+    {
+      "id": 99,
+      "type": "grass",
+      "properties": {
+        "name": "Grass Terrain",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "description": "Green grass with texture",
+        "pixelX": 99,
+        "pixelY": 132
+      }
+    },
+    {
+      "id": 100,
+      "type": "wall_brick",
+      "properties": {
+        "name": "Brick Wall Damaged",
+        "passable": false,
+        "destructible": true,
+        "hitPoints": 2,
+        "description": "Damaged brick wall",
+        "pixelX": 132,
+        "pixelY": 132
+      }
+    },
+    {
+      "id": 102,
+      "type": "wall_brick_solid",
+      "properties": {
+        "name": "Solid Brick Wall",
+        "passable": false,
+        "destructible": true,
+        "hitPoints": 3,
+        "description": "Solid brick wall",
+        "pixelX": 198,
+        "pixelY": 132
+      }
+    },
+    {
+      "id": 139,
+      "type": "water",
+      "properties": {
+        "name": "Water",
+        "passable": false,
+        "destructible": false,
+        "description": "Water terrain - impassable",
+        "pixelX": 627,
+        "pixelY": 165
+      }
+    },
+    {
+      "id": 314,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 1",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "description": "Alternative grass texture",
+        "pixelX": 66,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 315,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 2",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 99,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 316,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 3",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 132,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 317,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 4",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 165,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 318,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 5",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 198,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 319,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 6",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 231,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 320,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 7",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 264,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 321,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 8",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 297,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 322,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 9",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 330,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 323,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 10",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 363,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 324,
+      "type": "grass_variant",
+      "properties": {
+        "name": "Grass Variant 11",
+        "passable": true,
+        "destructible": false,
+        "providesCover": true,
+        "pixelX": 396,
+        "pixelY": 429
+      }
+    },
+    {
+      "id": 73,
+      "type": "player_tank",
+      "properties": {
+        "name": "Player Tank",
+        "faction": "player",
+        "moveSpeed": 2,
+        "fireRate": 500,
+        "description": "Yellow player tank",
+        "pixelX": 33,
+        "pixelY": 99
+      }
+    },
+    {
+      "id": 74,
+      "type": "enemy_tank",
+      "properties": {
+        "name": "Enemy Tank",
+        "faction": "enemy",
+        "moveSpeed": 1,
+        "fireRate": 1000,
+        "description": "Green enemy tank",
+        "pixelX": 66,
+        "pixelY": 99
+      }
+    }
+  ],
+  "tank_sprites": {
+    "green": {
+      "description": "Green tank animations",
+      "frames": {
+        "up": [18, 42],
+        "up_right": [19, 43],
+        "right": [66, 90],
+        "down_right": [91, 115],
+        "down": [114, 138],
+        "down_left": [139, 163],
+        "left": [162, 186],
+        "up_left": [187, 211]
+      },
+      "pixel_coords": {
+        "up": [{"x": 594, "y": 0}, {"x": 627, "y": 0}],
+        "right": [{"x": 594, "y": 66}, {"x": 627, "y": 66}],
+        "down": [{"x": 594, "y": 132}, {"x": 627, "y": 132}],
+        "left": [{"x": 594, "y": 198}, {"x": 627, "y": 198}]
+      }
+    },
+    "blue": {
+      "description": "Blue tank animations",
+      "frames": {
+        "up": [162, 186],
+        "right": [210, 234],
+        "down": [258, 282],
+        "left": [306, 330]
+      },
+      "pixel_coords": {
+        "up": [{"x": 594, "y": 198}, {"x": 627, "y": 198}],
+        "right": [{"x": 594, "y": 264}, {"x": 627, "y": 264}],
+        "down": [{"x": 594, "y": 330}, {"x": 627, "y": 330}],
+        "left": [{"x": 594, "y": 396}, {"x": 627, "y": 396}]
+      }
+    }
+  },
+  "grid": {
+    "orientation": "orthogonal",
+    "width": 33,
+    "height": 33
+  },
+  "obstacles": {
+    "impassable": [17, 54, 55, 59, 60, 78, 100, 102, 139],
+    "destructible": [17, 54, 55, 100, 102],
+    "indestructible": [59, 60, 78, 139]
+  },
+  "terrain": {
+    "passable": [0, 16, 74, 99, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324],
+    "cover": [99, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324]
+  }
+}

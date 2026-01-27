@@ -1,0 +1,218 @@
+{
+  "version": "1.1",
+  "description": "Tank Brigade Tilemap-based Animation Configuration",
+  "spritesheet": "tankbrigade.png",
+  "tileSize": 33,
+  "animations": {
+    "player_green_lvl1": {
+      "type": "Player",
+      "description": "基础绿色玩家坦克 - 使用tilemap瓦片ID",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [18, 42],
+        "right": [66, 90],
+        "down": [114, 138],
+        "left": [162, 186]
+      },
+      "pixelCoords": {
+        "up": [{"x": 594, "y": 0}, {"x": 627, "y": 0}],
+        "right": [{"x": 594, "y": 66}, {"x": 627, "y": 66}],
+        "down": [{"x": 594, "y": 132}, {"x": 627, "y": 132}],
+        "left": [{"x": 594, "y": 198}, {"x": 627, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 200
+    },
+    "player_green_lvl2": {
+      "type": "Player",
+      "description": "强化绿色玩家坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [19, 43],
+        "right": [67, 91],
+        "down": [115, 139],
+        "left": [163, 187]
+      },
+      "pixelCoords": {
+        "up": [{"x": 627, "y": 0}, {"x": 660, "y": 0}],
+        "right": [{"x": 627, "y": 66}, {"x": 660, "y": 66}],
+        "down": [{"x": 627, "y": 132}, {"x": 660, "y": 132}],
+        "left": [{"x": 627, "y": 198}, {"x": 660, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 180
+    },
+    "player_green_lvl3": {
+      "type": "Player",
+      "description": "高级绿色玩家坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [20, 44],
+        "right": [68, 92],
+        "down": [116, 140],
+        "left": [164, 188]
+      },
+      "pixelCoords": {
+        "up": [{"x": 660, "y": 0}, {"x": 693, "y": 0}],
+        "right": [{"x": 660, "y": 66}, {"x": 693, "y": 66}],
+        "down": [{"x": 660, "y": 132}, {"x": 693, "y": 132}],
+        "left": [{"x": 660, "y": 198}, {"x": 693, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 150
+    },
+    "enemy_green_lvl1": {
+      "type": "Enemy",
+      "description": "基础绿色敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [21, 45],
+        "right": [69, 93],
+        "down": [117, 141],
+        "left": [165, 189]
+      },
+      "pixelCoords": {
+        "up": [{"x": 693, "y": 0}, {"x": 726, "y": 0}],
+        "right": [{"x": 693, "y": 66}, {"x": 726, "y": 66}],
+        "down": [{"x": 693, "y": 132}, {"x": 726, "y": 132}],
+        "left": [{"x": 693, "y": 198}, {"x": 726, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 250
+    },
+    "enemy_green_lvl2": {
+      "type": "Enemy",
+      "description": "快速绿色敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [22, 46],
+        "right": [70, 94],
+        "down": [118, 142],
+        "left": [166, 190]
+      },
+      "pixelCoords": {
+        "up": [{"x": 726, "y": 0}, {"x": 759, "y": 0}],
+        "right": [{"x": 726, "y": 66}, {"x": 759, "y": 66}],
+        "down": [{"x": 726, "y": 132}, {"x": 759, "y": 132}],
+        "left": [{"x": 726, "y": 198}, {"x": 759, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 180
+    },
+    "enemy_green_lvl3": {
+      "type": "Enemy",
+      "description": "重型绿色敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [23, 47],
+        "right": [71, 95],
+        "down": [119, 143],
+        "left": [167, 191]
+      },
+      "pixelCoords": {
+        "up": [{"x": 759, "y": 0}, {"x": 792, "y": 0}],
+        "right": [{"x": 759, "y": 66}, {"x": 792, "y": 66}],
+        "down": [{"x": 759, "y": 132}, {"x": 792, "y": 132}],
+        "left": [{"x": 759, "y": 198}, {"x": 792, "y": 198}]
+      },
+      "frameCount": 2,
+      "frameDuration": 300
+    },
+    "player_blue_lvl1": {
+      "type": "Player",
+      "description": "基础蓝色玩家坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [162, 186],
+        "right": [210, 234],
+        "down": [258, 282],
+        "left": [306, 330]
+      },
+      "pixelCoords": {
+        "up": [{"x": 594, "y": 198}, {"x": 627, "y": 198}],
+        "right": [{"x": 594, "y": 264}, {"x": 627, "y": 264}],
+        "down": [{"x": 594, "y": 330}, {"x": 627, "y": 330}],
+        "left": [{"x": 594, "y": 396}, {"x": 627, "y": 396}]
+      },
+      "frameCount": 2,
+      "frameDuration": 200
+    },
+    "enemy_blue_lvl1": {
+      "type": "Enemy",
+      "description": "基础蓝色敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [163, 187],
+        "right": [211, 235],
+        "down": [259, 283],
+        "left": [307, 331]
+      },
+      "pixelCoords": {
+        "up": [{"x": 627, "y": 198}, {"x": 660, "y": 198}],
+        "right": [{"x": 627, "y": 264}, {"x": 660, "y": 264}],
+        "down": [{"x": 627, "y": 330}, {"x": 660, "y": 330}],
+        "left": [{"x": 627, "y": 396}, {"x": 660, "y": 396}]
+      },
+      "frameCount": 2,
+      "frameDuration": 220
+    },
+    "enemy_blue_lvl2": {
+      "type": "Enemy",
+      "description": "快速蓝色敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [164, 188],
+        "right": [212, 236],
+        "down": [260, 284],
+        "left": [308, 332]
+      },
+      "pixelCoords": {
+        "up": [{"x": 660, "y": 198}, {"x": 693, "y": 198}],
+        "right": [{"x": 660, "y": 264}, {"x": 693, "y": 264}],
+        "down": [{"x": 660, "y": 330}, {"x": 693, "y": 330}],
+        "left": [{"x": 660, "y": 396}, {"x": 693, "y": 396}]
+      },
+      "frameCount": 2,
+      "frameDuration": 160
+    },
+    "enemy_white_lvl1": {
+      "type": "Enemy",
+      "description": "白色装甲敌人坦克",
+      "source": "tilemap",
+      "tileIds": {
+        "up": [204, 228],
+        "right": [252, 276],
+        "down": [300, 324],
+        "left": [348, 372]
+      },
+      "pixelCoords": {
+        "up": [{"x": 396, "y": 264}, {"x": 429, "y": 264}],
+        "right": [{"x": 396, "y": 330}, {"x": 429, "y": 330}],
+        "down": [{"x": 396, "y": 396}, {"x": 429, "y": 396}],
+        "left": [{"x": 396, "y": 462}, {"x": 429, "y": 462}]
+      },
+      "frameCount": 2,
+      "frameDuration": 280
+    }
+  },
+  "effects": {
+    "explosion_small": {
+      "tileIds": [0, 1, 2],
+      "pixelCoords": [
+        {"x": 0, "y": 0},
+        {"x": 33, "y": 0},
+        {"x": 66, "y": 0}
+      ],
+      "frameDuration": 100
+    },
+    "bullet_normal": {
+      "tileIds": [96, 97, 98, 99],
+      "pixelCoords": [
+        {"x": 96, "y": 0},
+        {"x": 129, "y": 0},
+        {"x": 162, "y": 0},
+        {"x": 195, "y": 0}
+      ]
+    }
+  }
+}
