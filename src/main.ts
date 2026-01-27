@@ -66,6 +66,10 @@ async function canvasApp(): Promise<void> {
 
     // Instantiate game components
     const tileMapLoader = getTileMapLoader();
+    
+    // Load map data FIRST (before creating Render)
+    await tileMapLoader.loadLevel('level1.json', 'tileset_full.json');
+    
     const gameManager = new GameObjManager({ levelManager: tileLevelManager });
     const render = new Render(context, gameManager, {
         levelManager: tileLevelManager,
@@ -73,9 +77,6 @@ async function canvasApp(): Promise<void> {
     });
     // Initialize input watcher (handles keyboard events internally)
     new APWatcher(gameManager);
-
-    // Load map data for the current level
-    await tileMapLoader.loadLevel('level2.json', 'tileset.json');
 
     // Initialize animations from JSON config
     await gameManager.initAnimations();

@@ -80,11 +80,11 @@ export class TileLevelManager {
    */
   private async loadLevelLevels(): Promise<void> {
     const mapLoader = getTileMapLoader();
-    const availableLevels = ['level2.json'];
+    const availableLevels = ['level1.json'];
 
     for (const levelFile of availableLevels) {
       try {
-        const loadedMap = await mapLoader.loadLevel(levelFile, 'tileset.json');
+        const loadedMap = await mapLoader.loadLevel(levelFile, 'tileset_full.json');
 
         const tileLevelData: TileLevelData = {
           id: parseInt(levelFile.match(/\d+/)?.[0] || 1),

@@ -47,8 +47,8 @@ export class CollisionSystem {
     constructor(levelManager: LevelManager | null, options: CollisionSystemOptions = {}) {
         this.levelManager = levelManager;
         this.tileMapLoader = null;
-        this.tileSize = options.tileSize || 33;
-        this.gridSize = options.gridSize || 32;
+        this.tileSize = options.tileSize || 33;  // Must match tileRenderSize in MapConfig
+        this.gridSize = options.gridSize || 33;  // Should match tileSize for consistency
         this.gridCache = null;
         this.cacheTimestamp = 0;
     }
@@ -135,7 +135,13 @@ export class CollisionSystem {
 
         // Use TileMapLoader to check passability if available
         if (this.tileMapLoader) {
-            const tilesetData = this.tileMapLoader.getCachedMap('level2.json')?.tilesetData;
+            // Try to get tileset data from any cached map
+            const cachedMaps = ['level2.json', 'level_custom.json'];
+            let tilesetData = null;
+            for (const mapName of cachedMaps) {
+                tilesetData = this.tileMapLoader.getCachedMap(mapName)?.tilesetData;
+                if (tilesetData) break;
+            }
             if (tilesetData) {
                 return !this.tileMapLoader.isTilePassable(tileId, tilesetData);
             }
