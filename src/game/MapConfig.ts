@@ -26,10 +26,10 @@ export const mapData: number[][] = [
 export const MAP_CONFIG: IMapConfig = {
     cols: 23,
     rows: 13,
-    tileRenderSize: 33,  // Visual size on canvas
-    tileSourceSize: 32,  // Size in spritesheet
-    tilesPerRowInSheet: 25,  // 800px / 32px = 25 tiles per row
-    indexOffset: 0,      // TMX uses 1-indexed IDs, so no offset needed when we subtract 1
+    tileRenderSize: 33,  // Visual size on canvas (matches TMX tilewidth/tileheight)
+    tileSourceSize: 33,  // Size in spritesheet (tankbrigade.png uses 33x33 tiles)
+    tilesPerRowInSheet: 24,  // 800px / 33px ≈ 24.24, so 24 tiles per row
+    indexOffset: 1,      // TMX uses 1-indexed GIDs, need to subtract 1 for 0-indexed array access
     playerBounds: {
         minX: 0,
         maxX: 22,  // 0-indexed: 23 columns means indices 0-22

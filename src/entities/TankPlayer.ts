@@ -23,6 +23,7 @@ export class TankPlayer extends Player {
     direction: Direction;
     tankName: string;
     isPlayer: number | boolean;
+    active: boolean;
     destCook: number;
     destX: number;
     destY: number;
@@ -45,6 +46,7 @@ export class TankPlayer extends Player {
         this.direction = initDirection;
         this.tankName = tankID;
         this.isPlayer = isUser;
+        this.active = true;  // 确保坦克是激活状态
 
         this.destCook = 33; // Size of a tile or step distance
         this.destX = 6;     // Initial X position in terms of tiles/grid units
