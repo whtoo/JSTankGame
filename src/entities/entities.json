@@ -2,7 +2,7 @@
   "tileset_info": {
     "file_name": "tank_brigade_tileset.png",
     "name": "Tank Brigade Tileset",
-    "base_tile_size": 32,
+    "base_tile_size": 33,
     "total_width": 800,
     "total_height": 600
   },
@@ -10,41 +10,41 @@
     {
       "category": "Effects & Projectiles",
       "tiles": [
-        {"name": "explosion_small", "desc": "小型爆炸特效", "x": 0, "y": 0, "width": 32, "height": 32},
-        {"name": "explosion_medium", "desc": "中型爆炸特效", "x": 32, "y": 0, "width": 32, "height": 32},
-        {"name": "explosion_large", "desc": "大型爆炸特效", "x": 64, "y": 0, "width": 32, "height": 32},
-        {"name": "bullet_small", "desc": "普通子弹/机枪弹", "x": 128, "y": 0, "width": 32, "height": 32},
-        {"name": "shell_heavy", "desc": "重型坦克炮弹", "x": 384, "y": 0, "width": 32, "height": 32}
+        {"name": "explosion_small", "desc": "小型爆炸特效", "x": 0, "y": 0, "width": 33, "height": 33},
+        {"name": "explosion_medium", "desc": "中型爆炸特效", "x": 33, "y": 0, "width": 33, "height": 33},
+        {"name": "explosion_large", "desc": "大型爆炸特效", "x": 66, "y": 0, "width": 33, "height": 33},
+        {"name": "bullet_small", "desc": "普通子弹/机枪弹", "x": 132, "y": 0, "width": 33, "height": 33},
+        {"name": "shell_heavy", "desc": "重型坦克炮弹", "x": 396, "y": 0, "width": 33, "height": 33}
       ]
     },
     {
       "category": "Environment & Walls",
       "tiles": [
-        {"name": "wall_steel", "desc": "钢制墙体", "x": 0, "y": 32, "width": 32, "height": 32},
-        {"name": "wall_brick_red", "desc": "红色砖墙（可破坏）", "x": 192, "y": 64, "width": 32, "height": 32},
-        {"name": "water_deep", "desc": "深水区域（不可通行）", "x": 256, "y": 64, "width": 32, "height": 32},
-        {"name": "grass_land", "desc": "平原草地瓦片", "x": 32, "y": 128, "width": 32, "height": 32},
-        {"name": "forest_camouflage", "desc": "底部迷彩装饰块", "x": 0, "y": 384, "width": 32, "height": 32}
+        {"name": "wall_steel", "desc": "钢制墙体", "x": 0, "y": 33, "width": 33, "height": 33},
+        {"name": "wall_brick_red", "desc": "红色砖墙（可破坏）", "x": 0, "y": 132, "width": 33, "height": 33},
+        {"name": "water_deep", "desc": "深水区域（不可通行）", "x": 627, "y": 165, "width": 33, "height": 33},
+        {"name": "grass_land", "desc": "平原草地瓦片", "x": 99, "y": 132, "width": 33, "height": 33},
+        {"name": "concrete_block", "desc": "混凝土块", "x": 363, "y": 66, "width": 33, "height": 33}
       ]
     },
     {
       "category": "Player & Enemy Units",
       "tiles": [
-        {"name": "tank_green_up", "desc": "绿色坦克-朝上", "x": 608, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_green_right", "desc": "绿色坦克-朝右", "x": 640, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_green_down", "desc": "绿色坦克-朝下", "x": 672, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_green_left", "desc": "绿色坦克-朝左", "x": 704, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_blue_up", "desc": "蓝色坦克-朝上", "x": 736, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_blue_right", "desc": "蓝色坦克-朝右", "x": 768, "y": 0, "width": 32, "height": 32},
-        {"name": "tank_blue_down", "desc": "蓝色坦克-朝下", "x": 736, "y": 32, "width": 32, "height": 32},
-        {"name": "tank_blue_left", "desc": "蓝色坦克-朝左", "x": 768, "y": 32, "width": 32, "height": 32}
+        {"name": "tank_green_up", "desc": "绿色坦克-朝上", "x": 594, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_green_right", "desc": "绿色坦克-朝右", "x": 627, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_green_down", "desc": "绿色坦克-朝下", "x": 660, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_green_left", "desc": "绿色坦克-朝左", "x": 693, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_blue_up", "desc": "蓝色坦克-朝上", "x": 726, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_blue_right", "desc": "蓝色坦克-朝右", "x": 759, "y": 0, "width": 33, "height": 33},
+        {"name": "tank_blue_down", "desc": "蓝色坦克-朝下", "x": 726, "y": 33, "width": 33, "height": 33},
+        {"name": "tank_blue_left", "desc": "蓝色坦克-朝左", "x": 759, "y": 33, "width": 33, "height": 33}
       ]
     },
     {
       "category": "UI & Objects",
       "tiles": [
-        {"name": "eagle_icon", "desc": "总部/鹰头标志", "x": 0, "y": 64, "width": 32, "height": 32},
-        {"name": "skull_flag", "desc": "敌人标志旗帜", "x": 32, "y": 64, "width": 32, "height": 32}
+        {"name": "eagle_icon", "desc": "总部/鹰头标志", "x": 363, "y": 33, "width": 33, "height": 33},
+        {"name": "skull_flag", "desc": "敌人标志旗帜", "x": 33, "y": 66, "width": 33, "height": 33}
       ]
     }
   ]
