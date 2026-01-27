@@ -34,7 +34,9 @@
         "passable": false,
         "destructible": true,
         "hitPoints": 4,
-        "description": "Red brick pattern wall"
+        "description": "Red brick pattern wall",
+        "pixelX": 33,
+        "pixelY": 165
       }
     },
     {
@@ -45,7 +47,9 @@
         "passable": true,
         "destructible": false,
         "providesCover": true,
-        "description": "Green grass with texture"
+        "description": "Green grass with texture",
+        "pixelX": 99,
+        "pixelY": 132
       }
     },
     {
@@ -56,7 +60,9 @@
         "passable": true,
         "destructible": false,
         "hitPoints": 999,
-        "description": "White concrete block"
+        "description": "White concrete block",
+        "pixelX": 363,
+        "pixelY": 66
       }
     },
     {
@@ -67,7 +73,9 @@
         "passable": false,
         "destructible": true,
         "critical": true,
-        "description": "The base to defend"
+        "description": "The base to defend",
+        "pixelX": 363,
+        "pixelY": 33
       }
     },
     {
