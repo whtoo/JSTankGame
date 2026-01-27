@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "tiledversion": "1.11.0",
+  "name": "Tank Brigade - Level 1",
+  "type": "map",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "width": 13,
+  "height": 13,
+  "tilewidth": 33,
+  "tileheight": 33,
+  "nextobjectid": 1,
+  "backgroundcolor": "#404040",
+  "properties": {
+    "level": 1,
+    "playerLives": 3,
+    "enemies": 20,
+    "maxOnField": 4,
+    "spawnInterval": 3.0
+  },
+  "tilesets": [
+    {
+      "firstgid": 1,
+      "name": "tankbrigade",
+      "filename": "tileset.json"
+    }
+  ],
+  "layers": [
+    {
+      "id": 1,
+      "name": "Ground Layer",
+      "type": "tilelayer",
+      "width": 13,
+      "height": 13,
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "data": [
+         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+         0,  0, 18,  0,  0, 18,  0,  0, 18,  0,  0,  0,  0,
+         0,  0, 18,  0,  0, 18,  0,  0, 18,  0,  0,  0,  0,
+         0,  0, 18,  0,  0, 18,  0,  0, 18,  0,  0,  0,  0,
+         0,  0, 18, 18, 18, 18,  0,  0, 18, 18, 18, 18,  0,
+         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+        18,  0, 18,  0, 18, 18, 18, 18, 18,  0, 18,  0, 18,
+         0,  0, 18,  0, 18,  0,  0,  0, 18,  0, 18,  0,  0,
+         0,  0, 18,  0, 18,  0,  0,  0, 18,  0, 18,  0,  0,
+         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+         0,  0,  0,  0,  0,  0, 18,  0,  0,  0,  0,  0,  0,
+         0,  0,  0,  0, 18, 18, 18, 18, 18,  0,  0,  0,  0,
+         0,  0,  0,  0, 18, 18, 55, 18, 18,  0,  0,  0,  0
+      ]
+    }
+  ],
+  "objects": {
+    "player": {
+      "id": 1,
+      "name": "Player Tank",
+      "type": "player_tank",
+      "gid": 74,
+      "position": {
+        "gridX": 4,
+        "gridY": 12,
+        "pixelX": 132,
+        "pixelY": 396
+      }
+    },
+    "enemies": [
+      {
+        "id": 2,
+        "name": "Enemy Tank",
+        "type": "enemy_tank",
+        "gid": 75,
+        "position": {
+          "gridX": 0,
+          "gridY": 0,
+          "pixelX": 0,
+          "pixelY": 0
+        }
+      }
+    ],
+    "spawnPoints": [
+      {
+        "id": 3,
+        "name": "Player Spawn",
+        "type": "spawn_point",
+        "position": {
+          "gridX": 4,
+          "gridY": 12,
+          "pixelX": 132,
+          "pixelY": 396
+        }
+      },
+      {
+        "id": 4,
+        "name": "Enemy Spawn 1",
+        "type": "enemy_spawn",
+        "position": {
+          "gridX": 0,
+          "gridY": 0,
+          "pixelX": 0,
+          "pixelY": 0
+        }
+      },
+      {
+        "id": 5,
+        "name": "Enemy Spawn 2",
+        "type": "enemy_spawn",
+        "position": {
+          "gridX": 6,
+          "gridY": 0,
+          "pixelX": 198,
+          "pixelY": 0
+        }
+      },
+      {
+        "id": 6,
+        "name": "Enemy Spawn 3",
+        "type": "enemy_spawn",
+        "position": {
+          "gridX": 12,
+          "gridY": 0,
+          "pixelX": 396,
+          "pixelY": 0
+        }
+      }
+    ],
+    "base": {
+      "id": 7,
+      "name": "Eagle Base",
+      "type": "base_eagle",
+      "gid": 55,
+      "position": {
+        "gridX": 6,
+        "gridY": 12,
+        "pixelX": 198,
+        "pixelY": 396
+      }
+    }
+  }
+}
