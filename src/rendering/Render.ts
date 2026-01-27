@@ -131,7 +131,7 @@ export class Render {
 
     private _getTileMapData(): { gridData: number[][], columns: number, rows: number } | null {
         if (this.tileMapLoader) {
-            const loadedMap = this.tileMapLoader.getCachedMap('level2.json');
+            const loadedMap = this.tileMapLoader.getCachedMap('level1.json');
             console.log('Loaded map from TileMapLoader:', loadedMap ? 'found' : 'not found');
             if (loadedMap) {
                 // Convert 1D array to 2D array for rendering
@@ -170,8 +170,13 @@ export class Render {
         this.offscreenCanvas.width = mapCols * tileRenderSize;
         this.offscreenCanvas.height = mapRows * tileRenderSize;
 
-        this.offscreenContext.fillStyle = "#000000";
+        this.offscreenContext.fillStyle = "#404040";
         this.offscreenContext.fillRect(0, 0, mapCols * tileRenderSize, mapRows * tileRenderSize);
+
+        // Get tileset data for proper tile lookup
+        const loadedMap = this.tileMapLoader?.getCachedMap('level1.json');
+        const tilesetData = loadedMap?.tilesetData;
+        const firstgid = loadedMap?.firstgid ?? 1;
 
         for (let rowCtr = 0; rowCtr < mapRows; rowCtr++) {
             for (let colCtr = 0; colCtr < mapCols; colCtr++) {
@@ -179,16 +184,35 @@ export class Render {
 
                 if (gid === 0) continue;
 
-                // Calculate source coordinates from tileset
-                const sourceX = ((gid - 1) % 24) * 32;
-                const sourceY = Math.floor((gid - 1) / 24) * 32;
+                // Try to get tile position from tileset data
+                let sourceX = 0;
+                let sourceY = 0;
+                let foundTile = false;
+
+                if (tilesetData?.tiles) {
+                    const localId = gid - firstgid;
+                    const tileDef = tilesetData.tiles.find((t: any) => t.id === localId);
+                    if (tileDef?.properties?.pixelX !== undefined && tileDef?.properties?.pixelY !== undefined) {
+                        sourceX = tileDef.properties.pixelX;
+                        sourceY = tileDef.properties.pixelY;
+                        foundTile = true;
+                    }
+                }
+
+                // Fallback to grid calculation if tile not found in tileset
+                if (!foundTile) {
+                    const tileId = gid - 1;
+                    const tilesPerRow = 24;
+                    sourceX = (tileId % tilesPerRow) * tileRenderSize;
+                    sourceY = Math.floor(tileId / tilesPerRow) * tileRenderSize;
+                }
 
                 this.offscreenContext.drawImage(
                     this.tileSheet,
                     sourceX,
                     sourceY,
-                    32,
-                    32,
+                    tileRenderSize,
+                    tileRenderSize,
                     colCtr * tileRenderSize,
                     rowCtr * tileRenderSize,
                     tileRenderSize,
@@ -217,14 +241,14 @@ export class Render {
             return;
         }
 
-        // Find the base tile (GID 54 from tileset.json)
+        // Find the base tile (GID 55 = tile id 54 + firstgid 1)
         const { gridData } = tileMapData;
         let baseX = -1;
         let baseY = -1;
 
         for (let y = 0; y < gridData.length; y++) {
             for (let x = 0; x < gridData[y].length; x++) {
-                if (gridData[y][x] === 54) {
+                if (gridData[y][x] === 55) {
                     baseX = x;
                     baseY = y;
                     break;
@@ -257,18 +281,23 @@ export class Render {
 
     private _drawBaseProtection(centerX: number, centerY: number): void {
         const tileSize = 33;
+        const tileAtlas = getTileAtlas();
+        if (!tileAtlas.isReady() || !this.tileSheet) return;
 
-        this.context.fillStyle = '#8B4513';
-
-        for (let i = -1; i <= 1; i++) {
-            this.context.fillRect(centerX - tileSize + 4, centerY - tileSize + 4, tileSize - 8, 4);
-            this.context.fillRect(centerX - tileSize + 4, centerY + tileSize, tileSize - 8, 4);
-            this.context.fillRect(centerX + tileSize + 4, centerY - tileSize + 4, 4, tileSize - 8);
-            this.context.fillRect(centerX - tileSize + 4, centerY + tileSize, 4, tileSize - 8);
-        }
-
-        this.context.fillRect(centerX - tileSize + 4, centerY - tileSize + 4, tileSize - 8, 4);
-        this.context.fillRect(centerX + tileSize + 4, centerY + tileSize, tileSize - 8, 4);
+        // Draw brick walls around the base (3x3 protection)
+        // Top row
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX - tileSize, centerY - tileSize, tileSize, tileSize);
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX, centerY - tileSize, tileSize, tileSize);
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX + tileSize, centerY - tileSize, tileSize, tileSize);
+        
+        // Side walls (left and right of base)
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX - tileSize, centerY, tileSize, tileSize);
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX + tileSize, centerY, tileSize, tileSize);
+        
+        // Bottom row
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX - tileSize, centerY + tileSize, tileSize, tileSize);
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX, centerY + tileSize, tileSize, tileSize);
+        tileAtlas.drawTile(this.context, this.tileSheet, 'wall_brick_red', centerX + tileSize, centerY + tileSize, tileSize, tileSize);
     }
 
     drawGrass(): void {
@@ -331,19 +360,25 @@ export class Render {
     }
 
     private _drawTank(tank: TankLike): void {
-        const angleInRadians = tank.arc / 180 * Math.PI;
+        const angleInRadians = (tank.arc || 0) / 180 * Math.PI;
 
-        const posX = tank.centerX ?? tank.x;
-        const posY = tank.centerY ?? tank.y;
-        const tankW = tank.destW ?? tank.width;
-        const tankH = tank.destH ?? tank.height;
+        const posX = tank.centerX ?? tank.x ?? 0;
+        const posY = tank.centerY ?? tank.y ?? 0;
+        const tankW = tank.destW ?? tank.width ?? 33;
+        const tankH = tank.destH ?? tank.height ?? 33;
 
-        if (!tank.animSheet) {
+        // Fallback rendering when tileSheet is not ready or animSheet is missing
+        if (!this.tileSheet || !tank.animSheet) {
             this.context.save();
             this.context.translate(posX, posY);
             this.context.rotate(angleInRadians);
-            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FFFFFF');
+            // Use bright colors to make tank visible
+            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FF4444');
             this.context.fillRect(-tankW / 2, -tankH / 2, tankW, tankH);
+            // Add border for visibility
+            this.context.strokeStyle = '#FFFFFF';
+            this.context.lineWidth = 2;
+            this.context.strokeRect(-tankW / 2, -tankH / 2, tankW, tankH);
             this.context.restore();
             return;
         }
@@ -353,8 +388,11 @@ export class Render {
             this.context.save();
             this.context.translate(posX, posY);
             this.context.rotate(angleInRadians);
-            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FFFFFF');
+            this.context.fillStyle = tank.isPlayer ? '#FFD700' : (tank.color || '#FF4444');
             this.context.fillRect(-tankW / 2, -tankH / 2, tankW, tankH);
+            this.context.strokeStyle = '#FFFFFF';
+            this.context.lineWidth = 2;
+            this.context.strokeRect(-tankW / 2, -tankH / 2, tankW, tankH);
             this.context.restore();
             return;
         }
