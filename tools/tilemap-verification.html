@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tilemap Converter - Visual Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            font-size: 24px;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #e94560;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #ff6b6b;
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        select, input[type="number"] {
+            padding: 8px;
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 13px;
+            width: 120px;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .panel h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-info {
+            font-size: 12px;
+            color: #888;
+            font-weight: normal;
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            position: relative;
+            background: #0f3460;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Grid Overlay */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* Tile Detail Panel */
+        .detail-panel {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .detail-panel h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+
+        .tile-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .tile-box {
+            background: #0f3460;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .tile-box h4 {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .tile-canvas {
+            width: 100px;
+            height: 100px;
+            background: #000;
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+
+        .tile-info {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .tile-info span {
+            color: #00d4ff;
+        }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #0f3460;
+        }
+
+        .stat-item {
+            font-size: 13px;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: #0f3460;
+            border-radius: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            border: 1px solid #fff;
+        }
+
+        /* Progress */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #0f3460;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #e94560;
+            transition: width 0.3s;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #0f3460;
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        .error {
+            background: #e94560;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        /* Grid View Toggle */
+        .view-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .view-btn {
+            padding: 5px 12px;
+            background: #0f3460;
+            border: 1px solid #e94560;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .view-btn.active {
+            background: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Tilemap Converter - Visual Verification Tool</h1>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="control-group">
+                <label>Target Image</label>
+                <input type="file" id="targetInput" accept="image/*">
+            </div>
+            
+            <div class="control-group">
+                <label>Tileset Status</label>
+                <span id="tilesetStatus" style="color: #888; font-size: 13px;">Loading...</span>
+            </div>
+
+            <div class="control-group">
+                <label>Grid Cols</label>
+                <input type="number" id="gridCols" value="20" min="1" max="50">
+            </div>
+
+            <div class="control-group">
+                <label>Grid Rows</label>
+                <input type="number" id="gridRows" value="15" min="1" max="50">
+            </div>
+
+            <div class="control-group">
+                <label>Tile Size</label>
+                <input type="number" id="tileSize" value="48" min="8" max="128">
+            </div>
+
+            <div class="control-group">
+                <label>Match Method</label>
+                <select id="matchMethod">
+                    <option value="color">Color</option>
+                    <option value="histogram">Histogram</option>
+                    <option value="ssim">SSIM</option>
+                </select>
+            </div>
+
+            <button id="convertBtn" disabled>Start Conversion</button>
+            <button id="presetBtn">Load Preset</button>
+        </div>
+
+        <!-- Error Display -->
+        <div class="error" id="error"></div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Converting...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent" style="display: none;">
+            <!-- Original Image Panel -->
+            <div class="panel">
+                <h3>
+                    Original Image
+                    <span class="panel-info" id="originalInfo"></span>
+                </h3>
+                <div class="view-options">
+                    <button class="view-btn active" data-view="original">Original</button>
+                    <button class="view-btn" data-view="grid">Grid Overlay</button>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="originalCanvas"></canvas>
+                </div>
+                <div class="legend" id="colorLegend"></div>
+            </div>
+
+            <!-- Tileset Panel -->
+            <div class="panel">
+                <h3>
+                    Tileset (tankbrigade.png)
+                    <span class="panel-info">33x33px, 432 tiles</span>
+                </h3>
+                <div class="canvas-container">
+                    <canvas id="tilesetCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tile Detail Panel -->
+        <div class="detail-panel" id="detailPanel" style="display: none;">
+            <h3>Tile Detail View <span style="font-size: 12px; color: #888;">(Click on any tile above)</span></h3>
+            <div class="tile-comparison">
+                <div class="tile-box">
+                    <h4>Original Tile</h4>
+                    <canvas id="originalTileCanvas" class="tile-canvas" width="100" height="100"></canvas>
+                    <div class="tile-info">
+                        Position: <span id="tilePos">-</span><br>
+                        Avg Color: <span id="tileColor">-</span>
+                    </div>
+                </div>
+                <div class="tile-box">
+                    <h4>Best Match</h4>
+                    <canvas id="matchedTileCanvas" class="tile-canvas" width="100" height="100"></canvas>
+                    <div class="tile-info">
+                        Tile ID: <span id="matchedId">-</span><br>
+                        Confidence: <span id="confidence">-</span>
+                    </div>
+                </div>
+                <div class="tile-box">
+                    <h4>Top 3 Alternatives</h4>
+                    <div id="alternatives" style="display: flex; gap: 5px; justify-content: center;">
+                        <canvas class="tile-canvas" width="30" height="30"></canvas>
+                        <canvas class="tile-canvas" width="30" height="30"></canvas>
+                        <canvas class="tile-canvas" width="30" height="30"></canvas>
+                    </div>
+                    <div class="tile-info" id="altInfo" style="margin-top: 5px;">
+                        -
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let targetImage = null;
+        let tilesetImage = null;
+        let tilesetCanvas = null;
+        let conversionResult = null;
+        let selectedTile = null;
+        let tilesetLoaded = false;
+
+        // DOM Elements
+        const targetInput = document.getElementById('targetInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const presetBtn = document.getElementById('presetBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const mainContent = document.getElementById('mainContent');
+        const detailPanel = document.getElementById('detailPanel');
+
+        // Event Listeners
+        targetInput.addEventListener('change', handleTargetUpload);
+        convertBtn.addEventListener('click', startConversion);
+        presetBtn.addEventListener('click', loadPreset);
+
+        // Auto-load tileset on page load
+        loadTileset();
+
+        // View toggle buttons
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const parent = e.target.closest('.panel');
+                parent.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                updateView();
+            });
+        });
+
+        function handleTargetUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                targetImage = new Image();
+                targetImage.onload = () => {
+                    document.getElementById('originalInfo').textContent = 
+                        `${targetImage.width}x${targetImage.height}`;
+                    checkReady();
+                };
+                targetImage.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadTileset() {
+            try {
+                const response = await fetch('/resources/tankbrigade.png');
+                if (!response.ok) throw new Error('Failed to fetch tileset');
+                
+                const blob = await response.blob();
+                tilesetImage = new Image();
+                tilesetImage.onload = () => {
+                    tilesetCanvas = document.createElement('canvas');
+                    tilesetCanvas.width = tilesetImage.width;
+                    tilesetCanvas.height = tilesetImage.height;
+                    const ctx = tilesetCanvas.getContext('2d');
+                    ctx.drawImage(tilesetImage, 0, 0);
+                    tilesetLoaded = true;
+                    document.getElementById('tilesetStatus').textContent = 
+                        `Loaded (${tilesetImage.width}x${tilesetImage.height})`;
+                    document.getElementById('tilesetStatus').style.color = '#4caf50';
+                    checkReady();
+                };
+                tilesetImage.src = URL.createObjectURL(blob);
+            } catch (err) {
+                document.getElementById('tilesetStatus').textContent = 'Failed';
+                document.getElementById('tilesetStatus').style.color = '#f44336';
+                showError('Failed to load tileset: ' + err.message);
+            }
+        }
+
+        function checkReady() {
+            convertBtn.disabled = !targetImage || !tilesetLoaded;
+        }
+
+        async function loadPreset() {
+            try {
+                const targetResponse = await fetch('/resources/target_pic_1.jpeg');
+                if (!targetResponse.ok) throw new Error('Failed to fetch target image');
+
+                const targetBlob = await targetResponse.blob();
+
+                targetImage = new Image();
+                targetImage.onload = () => {
+                    document.getElementById('originalInfo').textContent = 
+                        `${targetImage.width}x${targetImage.height}`;
+                    checkReady();
+                };
+                targetImage.src = URL.createObjectURL(targetBlob);
+
+                document.getElementById('gridCols').value = 20;
+                document.getElementById('gridRows').value = 15;
+                document.getElementById('tileSize').value = 48;
+
+            } catch (err) {
+                showError('Failed to load preset: ' + err.message);
+            }
+        }
+
+        async function startConversion() {
+            if (!targetImage || !tilesetLoaded) {
+                showError('Please wait for tileset to load');
+                return;
+            }
+
+            loading.classList.add('active');
+            error.classList.remove('active');
+            mainContent.style.display = 'none';
+            detailPanel.style.display = 'none';
+
+            try {
+                const cols = parseInt(document.getElementById('gridCols').value);
+                const rows = parseInt(document.getElementById('gridRows').value);
+                const tileSize = parseInt(document.getElementById('tileSize').value);
+                const method = document.getElementById('matchMethod').value;
+
+                // Perform conversion
+                conversionResult = await performConversion({
+                    cols, rows, tileSize, method
+                });
+
+                // Display results
+                displayResults();
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        async function performConversion({ cols, rows, tileSize, method }) {
+            const tileGrid = [];
+            const confidenceGrid = [];
+            const tilesetTileSize = 33;
+            const tilesetCols = 24;
+
+            // Extract tileset signatures
+            const signatures = [];
+            for (let i = 0; i < 432; i++) {
+                const col = i % tilesetCols;
+                const row = Math.floor(i / tilesetCols);
+                const sig = extractSignature(
+                    tilesetCanvas, 
+                    col * tilesetTileSize, 
+                    row * tilesetTileSize, 
+                    tilesetTileSize
+                );
+                signatures.push({ id: i, ...sig });
+            }
+
+            // Match each tile
+            const total = cols * rows;
+            let processed = 0;
+
+            for (let y = 0; y < rows; y++) {
+                tileGrid[y] = [];
+                confidenceGrid[y] = [];
+
+                for (let x = 0; x < cols; x++) {
+                    const tileData = extractTileData(targetImage, x * tileSize, y * tileSize, tileSize);
+                    const match = findBestMatch(tileData, signatures, method);
+                    
+                    tileGrid[y][x] = match.id;
+                    confidenceGrid[y][x] = match.confidence;
+
+                    processed++;
+                    document.getElementById('progress').style.width = 
+                        `${(processed / total) * 100}%`;
+
+                    // Allow UI to update
+                    if (processed % 10 === 0) {
+                        await new Promise(r => setTimeout(r, 0));
+                    }
+                }
+            }
+
+            return { tileGrid, confidenceGrid, signatures, cols, rows, tileSize };
+        }
+
+        function extractSignature(canvas, x, y, size) {
+            const ctx = canvas.getContext('2d');
+            const data = ctx.getImageData(x, y, size, size).data;
+            
+            let r = 0, g = 0, b = 0;
+            const histogram = new Array(512).fill(0);
+
+            for (let i = 0; i < data.length; i += 4) {
+                r += data[i];
+                g += data[i + 1];
+                b += data[i + 2];
+                
+                const hr = Math.floor(data[i] / 32);
+                const hg = Math.floor(data[i + 1] / 32);
+                const hb = Math.floor(data[i + 2] / 32);
+                histogram[hr * 64 + hg * 8 + hb]++;
+            }
+
+            const pixelCount = data.length / 4;
+            return {
+                avgColor: {
+                    r: r / pixelCount,
+                    g: g / pixelCount,
+                    b: b / pixelCount
+                },
+                histogram: histogram.map(h => h / pixelCount)
+            };
+        }
+
+        function extractTileData(image, x, y, size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, x, y, size, size, 0, 0, size, size);
+            return ctx.getImageData(0, 0, size, size);
+        }
+
+        function findBestMatch(tileData, signatures, method) {
+            const tileSig = extractSignatureFromData(tileData);
+            let bestMatch = { id: 0, confidence: 0 };
+
+            for (const sig of signatures) {
+                let confidence = 0;
+
+                if (method === 'color') {
+                    confidence = calculateColorSimilarity(tileSig.avgColor, sig.avgColor);
+                } else if (method === 'histogram') {
+                    confidence = calculateHistogramSimilarity(tileSig.histogram, sig.histogram);
+                } else {
+                    // Combined
+                    const colorSim = calculateColorSimilarity(tileSig.avgColor, sig.avgColor);
+                    const histSim = calculateHistogramSimilarity(tileSig.histogram, sig.histogram);
+                    confidence = colorSim * 0.4 + histSim * 0.6;
+                }
+
+                if (confidence > bestMatch.confidence) {
+                    bestMatch = { id: sig.id, confidence };
+                }
+            }
+
+            return bestMatch;
+        }
+
+        function extractSignatureFromData(imageData) {
+            const data = imageData.data;
+            let r = 0, g = 0, b = 0;
+            const histogram = new Array(512).fill(0);
+
+            for (let i = 0; i < data.length; i += 4) {
+                r += data[i];
+                g += data[i + 1];
+                b += data[i + 2];
+                
+                const hr = Math.floor(data[i] / 32);
+                const hg = Math.floor(data[i + 1] / 32);
+                const hb = Math.floor(data[i + 2] / 32);
+                histogram[hr * 64 + hg * 8 + hb]++;
+            }
+
+            const pixelCount = data.length / 4;
+            return {
+                avgColor: {
+                    r: r / pixelCount,
+                    g: g / pixelCount,
+                    b: b / pixelCount
+                },
+                histogram: histogram.map(h => h / pixelCount)
+            };
+        }
+
+        function calculateColorSimilarity(c1, c2) {
+            const dist = Math.sqrt(
+                Math.pow(c1.r - c2.r, 2) +
+                Math.pow(c1.g - c2.g, 2) +
+                Math.pow(c1.b - c2.b, 2)
+            );
+            return Math.max(0, 1 - dist / 441.67);
+        }
+
+        function calculateHistogramSimilarity(h1, h2) {
+            let intersection = 0;
+            for (let i = 0; i < h1.length; i++) {
+                intersection += Math.min(h1[i], h2[i]);
+            }
+            return intersection;
+        }
+
+        function displayResults() {
+            mainContent.style.display = 'grid';
+            
+            drawOriginalCanvas();
+            drawTilesetCanvas();
+            
+            // Click handlers
+            document.getElementById('originalCanvas').onclick = handleCanvasClick;
+        }
+
+        function drawTilesetCanvas() {
+            const canvas = document.getElementById('tilesetCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = tilesetImage.width;
+            canvas.height = tilesetImage.height;
+            ctx.drawImage(tilesetImage, 0, 0);
+            
+            // Draw grid lines for tileset
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            const tileSize = 33;
+            const cols = 24;
+            const rows = 18;
+            
+            for (let x = 0; x <= cols; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * tileSize, 0);
+                ctx.lineTo(x * tileSize, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y <= rows; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * tileSize);
+                ctx.lineTo(canvas.width, y * tileSize);
+                ctx.stroke();
+            }
+        }
+
+        function drawOriginalCanvas() {
+            const canvas = document.getElementById('originalCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = targetImage.width;
+            canvas.height = targetImage.height;
+            ctx.drawImage(targetImage, 0, 0);
+
+            // Draw grid
+            const { cols, rows, tileSize } = conversionResult;
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x <= cols; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * tileSize, 0);
+                ctx.lineTo(x * tileSize, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y <= rows; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * tileSize);
+                ctx.lineTo(canvas.width, y * tileSize);
+                ctx.stroke();
+            }
+        }
+
+        function drawResultCanvas() {
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            const { cols, rows, tileSize, tileGrid } = conversionResult;
+            
+            canvas.width = cols * tileSize;
+            canvas.height = rows * tileSize;
+
+            // Draw tile IDs
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    const tileId = tileGrid[y][x];
+                    const px = x * tileSize;
+                    const py = y * tileSize;
+
+                    // Background based on confidence
+                    const confidence = conversionResult.confidenceGrid[y][x];
+                    const intensity = Math.floor(confidence * 255);
+                    ctx.fillStyle = `rgb(${255-intensity}, ${intensity}, 0, 0.3)`;
+                    ctx.fillRect(px, py, tileSize, tileSize);
+
+                    // Tile ID
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(tileId.toString(), px + tileSize/2, py + tileSize/2);
+
+                    // Border
+                    ctx.strokeStyle = '#444';
+                    ctx.strokeRect(px, py, tileSize, tileSize);
+                }
+            }
+        }
+
+        function updateStats() {
+            const { tileGrid, confidenceGrid, cols, rows } = conversionResult;
+            const confidences = confidenceGrid.flat();
+            const avg = confidences.reduce((a, b) => a + b, 0) / confidences.length;
+            const high = confidences.filter(c => c >= 0.8).length;
+            const med = confidences.filter(c => c >= 0.5 && c < 0.8).length;
+            const low = confidences.filter(c => c < 0.5).length;
+
+            document.getElementById('statsBar').innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${(avg * 100).toFixed(1)}%</div>
+                    <div>Avg Confidence</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #4caf50">${high}</div>
+                    <div>High (>80%)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #ff9800">${med}</div>
+                    <div>Med (50-80%)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #f44336">${low}</div>
+                    <div>Low (<50%)</div>
+                </div>
+            `;
+
+            document.getElementById('resultInfo').textContent = 
+                `${cols}x${rows} = ${cols * rows} tiles`;
+        }
+
+        function handleCanvasClick(e) {
+            const canvas = e.target;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            const { tileSize, cols, rows } = conversionResult;
+            const gridX = Math.floor(x / tileSize);
+            const gridY = Math.floor(y / tileSize);
+
+            if (gridX >= 0 && gridX < cols && gridY >= 0 && gridY < rows) {
+                showTileDetail(gridX, gridY);
+            }
+        }
+
+        function showTileDetail(x, y) {
+            selectedTile = { x, y };
+            detailPanel.style.display = 'block';
+
+            const { tileGrid, confidenceGrid, tileSize, signatures } = conversionResult;
+            const tileId = tileGrid[y][x];
+            const confidence = confidenceGrid[y][x];
+
+            // Update info
+            document.getElementById('tilePos').textContent = `(${x}, ${y})`;
+            document.getElementById('matchedId').textContent = tileId;
+            document.getElementById('confidence').textContent = `${(confidence * 100).toFixed(1)}%`;
+
+            // Draw original tile
+            const origCanvas = document.getElementById('originalTileCanvas');
+            const origCtx = origCanvas.getContext('2d');
+            origCtx.clearRect(0, 0, 100, 100);
+            origCtx.drawImage(targetImage, x * tileSize, y * tileSize, tileSize, tileSize, 0, 0, 100, 100);
+
+            // Get average color
+            const tileData = extractTileData(targetImage, x * tileSize, y * tileSize, tileSize);
+            const sig = extractSignatureFromData(tileData);
+            const color = sig.avgColor;
+            document.getElementById('tileColor').textContent = 
+                `RGB(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)})`;
+
+            // Draw matched tile
+            const matchedCanvas = document.getElementById('matchedTileCanvas');
+            const matchedCtx = matchedCanvas.getContext('2d');
+            matchedCtx.clearRect(0, 0, 100, 100);
+
+            const tilesetTileSize = 33;
+            const tilesetCols = 24;
+            const tx = (tileId % tilesetCols) * tilesetTileSize;
+            const ty = Math.floor(tileId / tilesetCols) * tilesetTileSize;
+            matchedCtx.drawImage(tilesetImage, tx, ty, tilesetTileSize, tilesetTileSize, 0, 0, 100, 100);
+
+            // Find alternatives
+            const tileSig = extractSignatureFromData(tileData);
+            const matches = [];
+            for (const sig of signatures) {
+                const colorSim = calculateColorSimilarity(tileSig.avgColor, sig.avgColor);
+                const histSim = calculateHistogramSimilarity(tileSig.histogram, sig.histogram);
+                const conf = colorSim * 0.4 + histSim * 0.6;
+                matches.push({ id: sig.id, confidence: conf });
+            }
+            matches.sort((a, b) => b.confidence - a.confidence);
+
+            // Draw alternatives
+            const altCanvases = document.querySelectorAll('#alternatives canvas');
+            const altInfo = document.getElementById('altInfo');
+            
+            let altText = '';
+            for (let i = 0; i < 3 && i < matches.length; i++) {
+                const match = matches[i + 1]; // Skip best match
+                if (!match) break;
+                
+                const ac = altCanvases[i];
+                const actx = ac.getContext('2d');
+                actx.clearRect(0, 0, 30, 30);
+                
+                const ax = (match.id % tilesetCols) * tilesetTileSize;
+                const ay = Math.floor(match.id / tilesetCols) * tilesetTileSize;
+                actx.drawImage(tilesetImage, ax, ay, tilesetTileSize, tilesetTileSize, 0, 0, 30, 30);
+                
+                altText += `#${match.id}: ${(match.confidence * 100).toFixed(0)}% `;
+            }
+            altInfo.textContent = altText || 'No alternatives';
+
+            // Scroll to detail
+            detailPanel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function updateView() {
+            if (!conversionResult) return;
+            drawOriginalCanvas();
+            drawResultCanvas();
+        }
+
+        function showError(msg) {
+            error.textContent = msg;
+            error.classList.add('active');
+        }
+    </script>
+</body>
+</html>
