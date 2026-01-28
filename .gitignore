@@ -15,6 +15,6 @@ coverage/
 kimi_browser
 playwright-*
 test
-tools
+
 .agents
 .kimi
